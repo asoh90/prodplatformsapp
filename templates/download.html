@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>File Download</title>
+        <link rel="stylesheet" href="/static/css/table.css">
+    </head>
+    <body>
+        <h2>Download your files here</h2>
+        <table class="minimalistBlack">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Platform</th>
+                    <th>File Name</th>
+                    <th>Created On</th>
+                    <th>Created By</th>
+                </tr>
+            </thead>
+                                                      
+            <tbody>
+                {% for record in records_list %}
+                <tr>
+                    <td>
+                        <a href="/download_output/{{ record[0] }}">{{ record[0] }}</a>
+                    </td>
+                    <td>
+                        <a href="/download_output/{{ record[0] }}">{{ record[2] }}</a>
+                    </td>
+                    <td>
+                        <a href="/download_output/{{ record[0] }}">{{ record[3] }}</a>
+                    </td>
+                    <td>{{ record[4] }}</td>
+                    <td>{{ record[5] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </body>
+</html>

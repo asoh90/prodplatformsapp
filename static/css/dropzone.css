@@ -1,0 +1,48 @@
+body {
+    font-family:"Arial", sans-serif;
+}
+
+.dropzone {
+    margin-top:1.5em;
+    widows: 200px;
+    height:200px;
+    border:2px dashed #ccc;
+    color:#ccc;
+    /* line-height:200px; */
+    text-align:center;
+}
+
+.dropzone input[type='file'] {
+    margin: auto;
+    color: transparent;
+    position: relative;
+    left: 95px;
+}
+
+.dropzone.dragover {
+    border-color:#000;
+    color:#000;
+    background-color:#FFF3CA;
+}
+
+.loader {
+    border: 5px solid #f3f3f3;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+    border-top: 5px solid #555;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    margin:0 auto;
+}
+  
+  /* Safari */
+@-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+  
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+    <head>
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="../static/css/dropzone.css" />
+        <!-- jQuery library -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <!-- Latest compiled JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+        <script>
+            var platformFunctions = {
+                                        "--Select Platform--":[],
+                                        "AppNexus": ["add1","add2","add3"],
+                                        "The Trade Desk": ["query","add","edit"]
+                                    };
+                                    
+            $(document).ready(function () {
+                var platformList = document.getElementById('platformList');
+                
+                for (var i = 0; i < Object.keys(platformFunctions).length; i++) {
+                    platformList.options[i] = new Option(Object.keys(platformFunctions)[i]);
+                }
+
+                // Start drop zone
+                var dropzone = document.getElementById('dropzone');
+                
+                dropzone.ondrop = function(e) {
+                    // Prevents the file from opening when drop into the dropzone
+                    e.preventDefault();
+                    // console.log(e)
+
+                    this.className = 'dropzone';
+                    upload(e.dataTransfer.files);
+                }
+
+                dropzone.ondragover = function() {
+                    this.className = 'dropzone dragover';
+                    return false;
+                }
+
+                dropzone.ondragleave = function() {
+                    this.className = 'dropzone';
+                    return false;
+                }
+
+                $("#file").on('change', function() {
+                    var file = document.getElementById('file');
+                    console.log("File Name: " + file);
+                    var files = [file];
+                    upload(files);
+                })
+                // End drop zone
+            })
+        </script>
+    </head>
+    <body>
+        <div class="col-md-4">
+            <form method="POST" action="">
+                <h4>Platform</h4>
+                <select class="form-control", id="platformList" name="platformList" onChange="getFunctions()">
+                </select>
+
+                <h4>Function</h4>
+                <select class="form-control", id="functionList" name="functionList">
+                </select>
+                
+                <!-- Start drop zone -->
+                <h4>File to Upload</h4>
+                
+                <div class="dropzone" id="dropzone">
+                    <br /><br /><br />
+                    Drop files here to upload
+                    <br />
+                    or
+                    <input type = "file" />
+                </div>
+                <div id="dropzone_result" />
+                <!-- End drop zone -->
+            </form>
+            <button href="/test">Download</button>
+        </div>
+
+        <script>
+            function getFunctions() {
+                var platformList = document.getElementById('platformList');
+                var functionList = document.getElementById('functionList');
+                var platformSelected = platformList.options[platformList.selectedIndex].value;
+                
+                var platformSelectedFunctions = platformFunctions[platformSelected];
+                if (platformSelected == '') {
+                    functionList.options.length = 0;
+                } else {
+                    functionList.options.length = 0;
+                    functionList.options[0] = new Option("--Select Function--");
+                    for (var i = 0; i < platformSelectedFunctions.length; i++) {
+                        platformFunction = platformSelectedFunctions[i];
+                        functionList.options[i+1] = new Option(platformFunction);
+                    }
+                }
+            }
+            
+            // Start drop zone
+            function upload(files) {
+                if (files.length > 1) {
+                    alert("Please drop only one file");
+                    return;
+                }
+                
+                let upload_results = document.getElementById("upload_results_element");
+
+                var platformList = document.getElementById('platformList');
+                var functionList = document.getElementById('functionList');
+                
+                if (platformList.options[platformList.selectedIndex].value == "--Select Platform--") {
+                    alert("Please select a platform!");
+                    return;
+                }
+
+                if (functionList.options[functionList.selectedIndex] == null || functionList.options[functionList.selectedIndex].value == "--Select Function--") {
+                    alert("Please select a function!");
+                    return;
+                }
+                
+                var platformSelected = platformList.options[platformList.selectedIndex].value;
+                var functionSelected = functionList.options[functionList.selectedIndex].value;
+                var fileSelected = files[0];
+                var fileSelectedName = fileSelected["name"];
+                
+                var fileExtension = fileSelectedName.substr(fileSelectedName.length - 5);
+                if (fileExtension != ".xlsx") {
+                    alert("Please select a file with '.xlsx' extension!")
+                    return;
+                }
+
+                console.log("Platform: " + platformSelected);
+                console.log("Function: " + functionSelected);
+                console.log("File: " + fileSelectedName);
+                confirm("Platform: " + platformSelected +
+                        "\nFunction: " + functionSelected +
+                        "\nFile: " + fileSelectedName +
+                        "\nConfirm upload?");
+                var xhr = new XMLHttpRequest();
+                var formData = new FormData();
+                
+                xhr.onload = function() {
+                    var data = this.responseText;
+                    console.log(data)
+                }
+
+                formData.append("file", fileSelected);
+                
+                xhr.open('post','/download');
+                xhr.send(formData);
+            }
+            // End drop zone
+        </script>
+    </body>
+</html>

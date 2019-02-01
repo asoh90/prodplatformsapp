@@ -1,0 +1,280 @@
+{% extends "layout.html" %}
+{% block content %}
+    <link rel="stylesheet" type="text/css"  href="{{ url_for('static', filename='css/dropzone.css')}}" />
+    {% if form.platform.errors %}
+        <!-- {{ form.platform() }} -->
+        <div>
+            {% for error in form.platform.errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    {% set file_name = request.args.get('filename')%}
+    {% set s3_id = request.args.get('id') %}
+    {% if file_name is not none %}
+    <button type="button" onclick="window.location.href='{{ url_for('download_output', id=s3_id) }}'" >Download {{ file_name }}</button><br /><br />
+    {% endif %}
+
+    <form method="POST" action="#">
+        {{ form.hidden_tag() }}
+        <h4>Platform</h4>
+        <select class="form-control", id="platformList" name="platformList" onChange="getFunctions()">
+        </select>
+
+        <h4>Function</h4>
+        <select class="form-control", id="functionList" name="functionList" onchange="query(this)">
+        </select>
+
+        <!-- Start drop zone -->
+        <h4>File to Upload</h4>
+        
+        <input type="button" value="Download Template to Upload" onclick="window.location.href='/downloaduploadtemplate'" />
+
+        <div class="dropzone" id="dropzone">
+            <br /><br /><br />
+            Drop files here to upload
+            <br />
+            or
+            <input type = "file" id="browseFile" onchange="upload(this.files)"/><br />
+        </div>
+        <!-- End drop zone -->
+    </form>
+
+    <div id="dropzone_result" />
+
+    <script>
+        var platformFunctions = {{ platform_functions|safe }}
+
+        $(document).ready(function () {
+            var platformList = document.getElementById('platformList');
+            
+            for (var i = 0; i < Object.keys(platformFunctions).length; i++) {
+                platformList.options[i] = new Option(Object.keys(platformFunctions)[i]);
+            }
+
+            // if session is loading, put the load gif
+            // var status = localStorage.getItem('status')
+            // // console.log("Before getItem status: " + status)
+            // if (status == 'loading') {
+            //     load()
+            // }
+        })
+
+        // Start drop zone
+        var dropzone = document.getElementById('dropzone');
+                
+        dropzone.ondrop = function(e) {
+            // Prevents the file from opening when drop into the dropzone
+            e.preventDefault();
+
+            this.className = 'dropzone';
+            upload(e.dataTransfer.files);
+        }
+
+        dropzone.ondragover = function() {
+            this.className = 'dropzone dragover';
+            return false;
+        }
+
+        dropzone.ondragleave = function() {
+            this.className = 'dropzone';
+            return false;
+        }
+        // End drop zone
+
+        function getFunctions() {
+            var platformList = document.getElementById('platformList');
+            var functionList = document.getElementById('functionList');
+            var platformSelected = platformList.options[platformList.selectedIndex].value;
+            var oldOptGroups = functionList.getElementsByTagName("optgroup");
+            for (var i=oldOptGroups.length-1;i>=0;i--) {
+                functionList.removeChild(oldOptGroups[i]);
+            }
+            
+            var platformSelectedFunctions = platformFunctions[platformSelected];
+            if (platformSelected == '') {
+                functionList.options.length = 0;
+            } else {
+                functionList.options.length = 0;
+                functionList.options[0] = new Option("--Select Function--");
+
+                var functionLevel = parseInt(platformSelectedFunctions["level"]);
+                if (functionLevel == 1) {
+                    var platformFunctionList = platformSelectedFunctions["functions"];
+                    for (var i = 0; i < platformFunctionList.length; i++) {
+                        platformFunction = platformFunctionList[i];
+
+                        functionList.options[i+1] = new Option(platformFunction);
+                    }
+                } else if (functionLevel == 2) {
+                    var platformFunctionList = platformSelectedFunctions["functions"];
+                    for (var i = 0; i < Object.keys(platformFunctionList).length; i++) {
+                        var platformFunctionHeader = Object.keys(platformFunctionList)[i];
+
+                        var optGroup = document.createElement('optgroup');
+                        optGroup.label = platformFunctionHeader;
+
+                        var platformFunctionRow = platformFunctionList[platformFunctionHeader];
+                        for (var j = 0; j < platformFunctionRow.length; j++) {
+                            optGroup.appendChild(new Option(platformFunctionRow[j]));
+                            // console.log(platformFunctionRow[j]);
+                        }
+                        functionList.appendChild(optGroup);
+                    }
+                }
+            }
+        }
+
+        // Start drop zone
+        function upload(files) {
+            if (files.length > 1) {
+                alert("Please drop only one file");
+                return;
+            }
+
+            var platformList = document.getElementById('platformList');
+            var functionList = document.getElementById('functionList');
+            
+            if (platformList.options[platformList.selectedIndex].value == "--Select Platform--") {
+                alert("Please select a platform!");
+                return;
+            }
+
+            if (functionList.options[functionList.selectedIndex] == null || functionList.options[functionList.selectedIndex].value == "--Select Function--") {
+                alert("Please select a function!");
+                return;
+            }
+            
+            var platformSelected = platformList.options[platformList.selectedIndex].value;
+            var functionSelected = functionList.options[functionList.selectedIndex].value;
+            var fileSelected = files[0];
+            var fileSelectedName = fileSelected["name"];
+            
+            var fileExtension = fileSelectedName.substr(fileSelectedName.length - 5);
+            if (fileExtension != ".xlsx") {
+                alert("Please select a file with '.xlsx' extension!")
+                return;
+            }
+
+            var userConfirm = confirm("Platform: " + platformSelected +
+                    "\nFunction: " + functionSelected +
+                    "\nFile: " + fileSelectedName +
+                    "\nConfirm upload?");
+            
+            if (userConfirm) {
+                load();
+                process(platformSelected, functionSelected, fileSelected);
+            }
+        }
+
+        function query(selectedValue) {
+            var value = selectedValue.value
+            if (value.includes("Query")) {
+                var platformList = document.getElementById('platformList');
+                var functionList = document.getElementById('functionList');
+
+                var platformSelected = platformList.options[platformList.selectedIndex].value;
+                var functionSelected = functionList.options[functionList.selectedIndex].value;
+
+                var userConfirm = confirm(value + " from platform: " + platformSelected + " ?");
+                if (userConfirm) {
+                    load();
+                    process(platformSelected, functionSelected, null);
+                }
+            }
+        }
+
+        function process(platformSelected, functionSelected, fileSelected) {
+            var xhr = new XMLHttpRequest();
+            var formData = new FormData();
+
+            xhr.onload = function() {
+                var blob = xhr.response;
+                var data = blobToString(blob);
+
+                var dropzone_result = document.getElementById('dropzone_result');
+                // Success upload
+                var response = xhr.getResponseHeader("Content-Disposition");
+
+                // Old Method to get file to download
+                // if (response != null) {
+                //     response = response.split("filename=");
+                //     var output_message = xhr.getResponseHeader("message");
+
+                //     var fileName = response[response.length-1];
+
+                //     dropzone_result.innerHTML = output_message;
+                //     dropzone_result.className = 'alert alert-success';
+
+                //     saveBlob(blob, fileName);
+                // } else {
+                //     // Fail upload
+                //     if (data.substring(0,5) == "ERROR" || data.includes("Error")) {
+                //         dropzone_result.innerHTML = data;
+                //         dropzone_result.className = 'alert alert-danger';
+                //     } else {
+                //         dropzone_result.innerHTML = data;
+                //         dropzone_result.className = 'alert alert-info';
+                //     }
+                // }
+                
+
+                // 
+                // localStorage.setItem('status', 'none')
+
+                if (data.substring(0,5) == "ERROR" || data.includes("Error")) {
+                    dropzone_result.innerHTML = data;
+                    dropzone_result.className = 'alert alert-danger';
+                } else if (data.substring(0,45) == "Click on the file name to download your file:") {
+                    dropzone_result.innerHTML = data;
+                    dropzone_result.className = 'alert alert-success';
+                } else {
+                    dropzone_result.innerHTML = data;
+                    dropzone_result.className = 'alert alert-info';
+                }
+            }
+
+            formData.append("file", fileSelected);
+            formData.append("function",functionSelected);
+            formData.append("platform", platformSelected);
+
+            console.log("File: " + fileSelected);
+            console.log("Function: " + functionSelected);
+            console.log("Platform: " + platformSelected);
+            
+            xhr.responseType = 'blob';
+            xhr.open('post','/process');
+            xhr.send(formData);
+        }
+        
+        // blob is to get the file (not in use if we are using a link to download the file)
+        // start blob
+        function saveBlob(blob, fileName) {
+            var a = document.createElement("a");
+            a.href = window.URL.createObjectURL(blob);
+            a.download = fileName;
+            a.click();
+        }
+
+        function blobToString(b) {
+            var u, x;
+            u = URL.createObjectURL(b);
+            x = new XMLHttpRequest();
+            x.open('GET', u, false); // although sync, you're not fetching over internet
+            x.send();
+            URL.revokeObjectURL(u);
+            return x.responseText;
+        }
+        // end blob
+
+        function load() {
+            var dropzone_result = document.getElementById('dropzone_result');
+            dropzone_result.innerHTML = null;
+            dropzone_result.className = 'loader';
+            // localStorage.setItem('status', 'loading')
+            // console.log("Set status in sesionStorage as: " + localStorage.getItem('status'))
+        }
+
+    </script>
+{% endblock content %}
