@@ -414,6 +414,7 @@ def add_data_source(access_token, data_source_name):
 
     # Fail if status code is not 201
     if not add_data_source_status == 201:
+        print(add_data_source_request.json())
         return access_token, None
 
     add_data_source_json = add_data_source_request.json()
@@ -783,12 +784,14 @@ def read_all_to_add_segments(file_path):
             # Fail to add new data source
             if data_source_id == None:
                 data_source_result.append("FAILED")
+                segment_status_list.append(None)
                 data_feed_result.append(None)
                 segments_and_overlap_plan_result.append(None)
                 modeling_plan_result.append(None)
                 activation_plan_result.append(None)
                 create_trait_folder_result.append(None)
                 segment_id_list.append(None)
+                eyeota_buyer_id_list.append(None)
             else:
                 # Append lower case name to data source name dict
                 data_source_name_dict[lowercase_data_source_name] = data_source_id
@@ -880,9 +883,6 @@ def read_all_to_add_segments(file_path):
                 trait_folder_path_dict, folder_id = check_and_add_trait_folder(access_token, "", trait_folder_path_split, trait_folder_path_dict, 0)
 
                 create_trait_folder_result.append("Created")
-        else:
-            create_trait_folder_result.append(None)
-            segment_id_list.append(None)
         
         # Create trait if data source and trait folder exists
         create_trait_output = None
@@ -900,26 +900,26 @@ def read_all_to_add_segments(file_path):
                 create_trait_output = "Failed. Please enter a number for Segment Lifetime"
                 eyeota_buyer_id_list.append(None)
 
-        # segment lifetime is numerical
-        if create_trait_output == None:
-            access_token, status_code, output = add_trait(access_token, segment_name, segment_description, segment_lifetime, folder_id, data_source_id)
+            # segment lifetime is numerical
+            if create_trait_output == None:
+                access_token, status_code, output = add_trait(access_token, segment_name, segment_description, segment_lifetime, folder_id, data_source_id)
 
-            if not status_code == 201:
-                segment_id_list.append(None)
-                segment_status_list.append(None)
-                create_trait_output = output
-                eyeota_buyer_id_list.append(None)
-            else:
-                segment_id_list.append(output)
-                segment_status_list.append(ADD_TRAIT_STATUS)
-                access_token, edit_trait_result = edit_trait_rule(access_token, output, folder_id, data_source_id, segment_name, segment_description, segment_lifetime)
-
-                if edit_trait_result == None:
-                    create_trait_output = "Failed to edit Trait Expression"
+                if not status_code == 201:
+                    segment_id_list.append(None)
+                    segment_status_list.append(None)
+                    create_trait_output = output
                     eyeota_buyer_id_list.append(None)
                 else:
-                    create_trait_output = "Created"
-                    eyeota_buyer_id_list.append("{}:{}".format(data_source_id, output))
+                    segment_id_list.append(output)
+                    segment_status_list.append(ADD_TRAIT_STATUS)
+                    access_token, edit_trait_result = edit_trait_rule(access_token, output, folder_id, data_source_id, segment_name, segment_description, segment_lifetime)
+
+                    if edit_trait_result == None:
+                        create_trait_output = "Failed to edit Trait Expression"
+                        eyeota_buyer_id_list.append(None)
+                    else:
+                        create_trait_output = "Created"
+                        eyeota_buyer_id_list.append("{}:{}".format(data_source_id, output))
 
         create_trait_result.append(create_trait_output)
 
@@ -938,6 +938,24 @@ def read_all_to_add_segments(file_path):
     os.remove(file_path)
     file_name_with_extension = file_path.split("/")[-1]
     file_name = file_name_with_extension.split(".xlsx")[0]
+
+    # print("Segment Name: {}".format(len(segment_name_list)))
+    # print("Segment Description: {}".format(len(segment_description_list)))
+    # print("Segment Status: {}".format(len(segment_status_list)))
+    # print("Segment Lifetime: {}".format(len(segment_lifetime_list)))
+    # print("Trait Folder Path: {}".format(len(trait_folder_path_list)))
+    # print("Data Source ID: {}".format(len(data_source_id_list)))
+    # print("Data Source Name: {}".format(len(data_source_name_list)))
+    # print("Data Feed Description: {}".format(len(data_feed_description_list)))
+    # print("Distribution: {}".format(len(data_feed_distribution_list)))
+    # print("Data Source Result: {}".format(len(data_source_result)))
+    # print("Data Feed Result: {}".format(len(data_feed_result)))
+    # print("Segments and Overlap Plan Result: {}".format(len(segments_and_overlap_plan_result)))
+    # print("Modeling Plan Result: {}".format(len(modeling_plan_result)))
+    # print("Activation Plan Result: {}".format(len(activation_plan_result)))
+    # print("Trait Folder Result: {}".format(len(create_trait_folder_result)))
+    # print("Create Segment Result: {}".format(len(create_trait_result)))
+    # print("Eyeota Buyer ID: {}".format(len(eyeota_buyer_id_list)))
 
     write_df = pd.DataFrame({
                     "Segment Name":segment_name_list,
