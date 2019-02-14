@@ -139,7 +139,7 @@ def split_segments_to_add(segment_dict, segment_name_list, segment_id, segment_d
     else:
         # current_segment is the lowest child segment
         if len(segment_name_list) == 0:
-            segment_dict[current_segment_name] = {"id":int(segment_id),"description":str(segment_description), "private_client_id":str(private_client_id)}
+            segment_dict[current_segment_name] = {"id":int(segment_id),"description":str(segment_description), "private_client_id":private_client_id}
         # current_segment_name is not the lowest child segment
         else:
             temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id, segment_description, private_client_id)
@@ -166,7 +166,7 @@ def format_segment_json(segment_dict):
             new_dict["targetable"] = True
             
             private_client_id = segment_dict[segment_name]["private_client_id"]
-            if not private_client_id == None:
+            if not pd.isnull(private_client_id):
                 private_client_id_list = private_client_id.split("|")
                 new_dict["users"] = {"include":private_client_id_list}
         else:
