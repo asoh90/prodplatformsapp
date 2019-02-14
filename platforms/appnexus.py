@@ -6,6 +6,7 @@ import os
 import numpy
 import time
 from flask import session
+import datetime
 
 MEMBER_ID = 1706
 THREAD_LIMIT = 50
@@ -111,6 +112,7 @@ def authenticate():
                                   'auth':auth_credentials
                               })
     print("Authenticate URL: {}".format(auth_request.url))
+    variables.logger.warning("{} Authentication URL: {}".format(datetime.datetime.now().isoformat(), auth_request.url))
     auth_json = auth_request.json()
     response = auth_json['response']
     # print(response)
@@ -209,13 +211,15 @@ def retrieve_segments(start_element, num_elements, segment_dict, total_segments)
                                     "num_elements":num_elements,
                                     "member_id":MEMBER_ID
                                 })
-    print("Retrieve Request: " + request_to_send.url)
+    print("Retrieve Request: {}".format(request_to_send.url))
+    variables.logger.warning("{} Retrieve Request: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
     retrieve_response = request_to_send.json()
     # print(retrieve_response)
 
     if (total_segments[0] == 1):
         total_segments[0] = retrieve_response["response"]["count"]
     print("Retrieving {} of {} segments".format(start_element, total_segments))
+    variables.logger.warning("{} Retrieving {} of {} segments".format(datetime.datetime.now().isoformat(), start_element, total_segments))
 
     # print(retrieve_response)
     try:
@@ -242,11 +246,14 @@ def retrieve_segments(start_element, num_elements, segment_dict, total_segments)
             }
     except:
         print("ERROR: {}".format(retrieve_response['response']['error']))
+        variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), retrieve_response['response']['error']))
         print("Error storing segment to segment_dict. Wait 20 seconds to run again.")
+        variables.logger.warning("{} Error storing segment to segment_dict. Wait 20 seconds to run again.")
         time.sleep(20)
         retrieve_segments(start_element, num_elements, segment_dict, total_segments)
     finally:
         print("Sleep for 20 seconds to avoid call limit")
+        variables.logger.warning("{} Sleep for 20 seconds to avoid call limit".format(datetime.datetime.now().isoformat()))
         time.sleep(20)
 # End Query Segments functions
 
@@ -273,7 +280,8 @@ def add_segment(code, segment_name, segment_description, price, duration, state,
                                     json={
                                         'segment':segment_to_add
                                     })
-        print("Add Request: " + request_to_send.url)
+        print("Add Request: {}".format(request_to_send.url))
+        variables.logger.warning("{} Add Request: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
         add_response = request_to_send.json()
         # print(add_response)
         response = add_response["response"]
@@ -489,6 +497,7 @@ def read_file_to_add_segments(file_path):
 
         if add_segment_row_num < len(code_list):
             print("Sleep 60 seconds to avoid limit")
+            variables.logger.warning("{} Sleep 60 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
             time.sleep(60)
 
             add_segments_current_time = time.time()
@@ -497,6 +506,7 @@ def read_file_to_add_segments(file_path):
 
             if add_segments_authentication_timeover > 0:
                 print("Authenticating...")
+                variables.logger.warning("{} Authenticating".format(datetime.datetime.now().isoformat()))
                 authenticate()
                 add_segments_authenticate_count += 1
 
@@ -576,6 +586,7 @@ def read_file_to_add_segments(file_path):
             if private_segment_row_num < len(private_segments_to_add):
                 if private_batch_num % 2 == 0:
                     print("Sleep 60 seconds to avoid limit")
+                    variables.logger.warning("{} Sleep 60 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
                     time.sleep(60)
 
                 private_segments_current_time = time.time()
@@ -584,6 +595,7 @@ def read_file_to_add_segments(file_path):
 
                 if private_segments_authentication_timeover > 0:
                     print("Authenticating...")
+                    variables.logger.warning("{} Authenticating...".format(datetime.datetime.now().isoformat()))
                     authenticate()
                     add_segments_authenticate_count += 1
             
@@ -653,7 +665,8 @@ def edit_segment(segment_id, code, segment_name, segment_description, price, dur
                                     json={
                                         'segment':segment_to_edit
                                     })
-        print("Edit Request: " + request_to_send.url)
+        print("Edit Request: {}".format(request_to_send.url))
+        variables.logger.warning("{} Edit Request: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
         edit_response = request_to_send.json()
         # print(edit_response)
         response = edit_response["response"]
@@ -869,6 +882,7 @@ def read_file_to_edit_segments(file_path):
 
         if edit_segment_row_num < len(code_list):
             print("Sleep 60 seconds to avoid limit")
+            variables.logger.warning("{} Sleep 60 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
             time.sleep(60)
 
             edit_segments_current_time = time.time()
@@ -877,6 +891,7 @@ def read_file_to_edit_segments(file_path):
 
             if edit_segments_authentication_timeover > 0:
                 print("Authenticating...")
+                variables.logger.warning("{} Authenticating...".format(datetime.datetime.now().isoformat()))
                 authenticate()
                 edit_segments_authenticate_count += 1
 
@@ -938,19 +953,24 @@ def retrieve_segments_for_member(buyer_member_id):
                                                 'buyer_member_id':buyer_member_id
                                             }
                                         )
-        print("Retrieve Request URL: " + request_to_send.url)
+        print("Retrieve Request URL: {}".format(request_to_send.url))
+        variables.logger.warning("{} Retrieve Request URL: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
         retrieve_response = request_to_send.json()
         member_data_sharings = retrieve_response["response"]["member_data_sharings"][0]
         segment_list = member_data_sharings["segments"]
         record_id = member_data_sharings["id"]
         print("Record ID: {}".format(record_id))
+        variables.logger.warning("{} Record ID: {}".format(datetime.datetime.now().isoformat(), record_id))
         return {"record_id":record_id,"segment_list":segment_list}
     except Exception:
         print(retrieve_response["response"]["error"])
+        variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), retrieve_response["response"]["error"]))
 
 # overwrite segment ids for specific record_id
 def refresh_segment_ids(record_id, new_segment_id_list):
     print("Refreshing record id: {}".format(record_id))
+    variables.logger.warning("{} Refreshing record id: {}".format(datetime.datetime.now().isoformat(), record_id))
+
     segment_list_to_send = {"segments":new_segment_id_list}
 
     try:
@@ -965,7 +985,8 @@ def refresh_segment_ids(record_id, new_segment_id_list):
                                                 json={
                                                     'member_data_sharing':segment_list_to_send
                                                 })
-        print("Refresh Request URL: " + request_to_send.url)
+        print("Refresh Request URL: {}".format(request_to_send.url))
+        variables.logger.warning("{} Refresh Request URL: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
         refresh_response = request_to_send.json()
         return refresh_response["response"]["status"]
     except Exception as e:
@@ -987,6 +1008,7 @@ def retrieve_segment(code, current_segments, output_messages):
                                             }
                                         )
         print("Retrieve Segment ID Request URL: " + request_to_send.url)
+        variables.logger.warning("{} Retrieve Segment ID Request URL: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
         retrieve_response = request_to_send.json()
         segment = retrieve_response["response"]["segment"]
         current_segments[code] = {
@@ -1305,6 +1327,7 @@ def read_file_to_add_segment_billings(file_path):
 
         if add_billing_row_num < len(segment_id_list):
             print("Sleep 60 seconds to avoid limit")
+            variables.logger.warning("{} Sleep 60 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
             time.sleep(60)
 
             add_billing_current_time = time.time()
@@ -1313,6 +1336,7 @@ def read_file_to_add_segment_billings(file_path):
 
             if add_billing_authentication_timeover > 0:
                 print("Authenticating...")
+                variables.logger.warning("{} Authenticating...".format(datetime.datetime.now().isoformat()))
                 authenticate()
                 add_billing_authenticate_count += 1
 
@@ -1353,6 +1377,7 @@ def get_segment_loads_report(start_date, end_date):
                                     },
                                     json=request_json)
     print("Get Segments Loads Report URL: {}".format(request_segment_loads_report.url))
+    variables.logger.warning("{} Get Segments Loads Report URL: {}".format(datetime.datetime.now().isoformat(), request_segment_loads_report.url))
     
     response = request_segment_loads_report.json()
     if response["response"]["status"] == "error":
@@ -1389,6 +1414,7 @@ def get_data_usage_report(start_date, end_date):
                                     },
                                     json=request_json)
     print("Get Data Usage Report URL: {}".format(request_data_usage_report.url))
+    variables.logger.warning("{} Get Data Usage Report URL: {}".format(datetime.datetime.now().isoformat(), request_data_usage_report.url))
     
     response = request_data_usage_report.json()
     if response["response"]["status"] == "error":
@@ -1398,6 +1424,7 @@ def get_data_usage_report(start_date, end_date):
 
 def download_report(report_id):
     print("Sleep 5 seconds before retrieving report")
+    variables.logger.warning("{} Sleep 5 seconds before retrieving report".format(datetime.datetime.now().isoformat()))
     # print("REPORT ID: {}".format(report_id))
     time.sleep(5)
     request_report = requests.get(url_download_report,
@@ -1683,6 +1710,7 @@ def read_file_to_retrieve_segments(file_path):
         if get_segment_row_num < len(code_list):
             if batch_num % 2 == 0:
                 print("Sleep 60 seconds to avoid limit")
+                variables.logger.warning("{} Sleep 60 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
                 time.sleep(60)
 
             if get_segments_authentication_timeover > 0:
@@ -1734,7 +1762,8 @@ def add_segment_billing(segment_id, code, state, data_category_id, is_public, da
                                     json={
                                         'segment-billing-category':segment_billing_to_add
                                     })
-        print("Add Segment Billing Request: " + request_to_send.url)
+        print("Add Segment Billing Request: {}".format(request_to_send.url))
+        variables.logger.warning("{} Add Segment Billing Request: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
         add_segment_billing_response = request_to_send.json()
         # print(add_segment_billing_response)
         add_billing_outputs[code] = add_segment_billing_response["response"]["status"]
@@ -1773,7 +1802,8 @@ def edit_segment_billing(segment_billing_id, segment_id, code, state, data_categ
                                     json={
                                         'segment-billing-category':segment_billing_to_edit
                                     })
-        print("Edit Segment Billing Request: " + request_to_send.url)
+        print("Edit Segment Billing Request: {}".format(request_to_send.url))
+        variables.logger.warning("{} Edit Segment Billing Request: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
         edit_segment_billing_response = request_to_send.json()
         # print(edit_segment_billing_response)
         edit_billing_outputs[code] = edit_segment_billing_response["response"]["status"]
@@ -1794,7 +1824,8 @@ def get_segment_billing(segment_id, segment_code, current_segment_billings, bill
                                     params={
                                         'segment_id':segment_id
                                     })
-        print("Get Segment Billing Request: " + request_to_send.url)
+        print("Get Segment Billing Request: {}".format(request_to_send.url))
+        variables.logger.warning("{} Get Segment Billing Request: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
         get_segment_billing_response = request_to_send.json()
         # print(get_segment_billing_response)
         segment_billing_category = get_segment_billing_response["response"]["segment-billing-categories"][0]
@@ -1832,6 +1863,7 @@ def get_segment_billing(segment_id, segment_code, current_segment_billings, bill
 def get_segment_billing_range(start_element, element_num, segment_billing_dict, total_elements, to_get_total_elements, counter_to_wait):
     if counter_to_wait % 4 == 0:
         print("Sleep for 20 seconds to avoid call limit")
+        variables.logger.warning("{} Sleep for 20 seconds to avoid call limit".format(datetime.datetime.now().isoformat()))
         time.sleep(20)
     
     request_to_send = requests.get(url_segment_billing_category,
@@ -1844,6 +1876,7 @@ def get_segment_billing_range(start_element, element_num, segment_billing_dict, 
                                     "num_elements":RETRIEVE_SEGMENTS_NUM_ELEMENTS
                                 })
     print("Get All Segment Billing URL: {}".format(request_to_send.url))
+    variables.logger.warning("{} Get All Segment Billing URL: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
 
     start_element += element_num
     response_json = request_to_send.json()
@@ -1876,8 +1909,10 @@ def get_segment_billing_range(start_element, element_num, segment_billing_dict, 
                                                 }
     except:
         print("ERROR: {}".format(response["error"]))
+        variables.logger.warning("{} Error: {}".format(datetime.datetime.now().isoformat(), response["error"]))
     finally:
         print("Sleep for 20 seconds to avoid call limit")
+        variables.logger.warning("{} Sleep for 20 seconds to avoid call limit".format(datetime.datetime.now().isoformat()))
         time.sleep(20)
 
 def get_all_segment_billing():

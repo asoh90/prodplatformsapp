@@ -2,6 +2,7 @@ import requests
 import write_excel
 import variables
 import pandas as pd
+import datetime
 
 # API URL
 URL_HOME = "https://api.thetradedesk.com/v3/"
@@ -56,7 +57,7 @@ def callAPI(function, file_path):
 # get authentication code. return None if credentials fail
 def getAuthenticationCode():
     auth_code = None
-    auth_data = requests.post(URL_AUTHENTICATION,
+    auth_request = requests.post(URL_AUTHENTICATION,
                     headers={
                         'Content-Type':'application/json'
                     },
@@ -64,8 +65,10 @@ def getAuthenticationCode():
                         'Login':login,
                         'Password':password,
                         'TokenExpirationInMinutes':3600
-                    }).json()
-
+                    })
+    print("Authentication Request: {}".format(auth_request.url))
+    variables.logger.warning("{} Authentication Request: {}".format(datetime.datetime.now().isoformat(), auth_request.url))
+    auth_data = auth_request.json()
     # auth_code is null if credentials are incorrect
     try:
         auth_code = auth_data["Token"]
@@ -89,7 +92,8 @@ def get_query_all():
                         'PageStartIndex':0,
                         'PageSize':None
                     }).json()
-    print("Query Request: " + URL_QUERY)
+    print("Query Request: {}".format(URL_QUERY))
+    variables.logger.warning("{} Query Request: {}".format(datetime.datetime.now().isoformat(), URL_QUERY))
     # write to file
     return query_data
 
@@ -121,6 +125,7 @@ def read_file(file_path, function):
             result_list.append(output)
     except Exception as e:
         print("ERROR: " + e)
+        variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), e))
     finally: 
         json_output = {'Result':result_list}
         return json_output
@@ -163,6 +168,7 @@ def add_or_edit(provider_element_id, parent_element_id, display_name, buyable, d
     if ("Message" in output_json_data):
         result = output_json_data["Message"]
         print("result: {}".format(result))
+        variables.logger.warning("{} result: {}".format(datetime.datetime.now().isoformat(), result))
     return {"message":result, "output":json_to_send}
 
 def store_segment_in_dict(json_output):

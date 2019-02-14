@@ -3,7 +3,6 @@ import variables
 import write_excel
 import pandas as pd
 import datetime
-from datetime import datetime, timedelta
 import json
 import os
 
@@ -70,6 +69,7 @@ def authenticate():
                             },
                             data=data)
     print("Authenticate URL: {}".format(auth_request.url))
+    variables.logger.warning("{} Authenticate URL: {}".format(datetime.datetime.now().isoformat(), auth_request.url))
     auth_json = auth_request.json()
     auth_token = auth_json["access_token"] 
     return auth_token
@@ -81,6 +81,7 @@ def get_categories(access_token):
                                             'Authorization':'Bearer ' + access_token
                                         })
     print("Get Categories URL: {}".format(get_categories_request.url))
+    variables.logger.warning("{} Get Categories URL: {}".format(datetime.datetime.now().isoformat(), get_categories_request.url))
     if not get_categories_request.status_code == 200:
         return None
 
@@ -127,6 +128,7 @@ def get_segments(access_token, offset):
                                             'limit':LIMIT
                                         })
     print("Get Segments URL: {}".format(get_segments_request.url))
+    variables.logger.warning("{} Get Segments URL: {}".format(datetime.datetime.now().isoformat(), get_segments_request.url))
     if not get_segments_request.status_code == 200:
         return None
 
@@ -258,6 +260,7 @@ def add_category(access_token, category_name, region, parent_category_id):
                             },
                             json=add_category_json)
     print("Add Category URL: {}".format(add_category_request.url))
+    variables.logger.warning("{} Add Category URL: {}".format(datetime.datetime.now().isoformat(), add_category_request.url))
     # print(add_category_request.json())
     if add_category_request.status_code == 201:
         add_category_response = add_category_request.json()
@@ -286,6 +289,7 @@ def add_segment(access_token, region, category_id, ref_id, fee, ttl, name, statu
                                 "Frequency":1
                             })
     print("Add Segment URL: {}".format(add_segment_request.url))
+    variables.logger.warning("{} Add Segment URL: {}".format(datetime.datetime.now().isoformat(), add_segment_request.url))
 
     add_segment_json = add_segment_request.json()
     # print(add_segment_json)
@@ -316,6 +320,7 @@ def edit_segment(access_token, segment_id, region, category_id, ref_id, fee, ttl
                                 "Frequency":1
                             })
     print("Edit Segment URL: {}".format(edit_segment_request.url))
+    variables.logger.warning("{} Edit Segment URL: {}".format(datetime.datetime.now().isoformat(), edit_segment_request.url))
 
     edit_segment_json = edit_segment_request.json()
     # print(add_segment_json)
@@ -418,7 +423,7 @@ def read_file_to_add_segments(file_path):
                     else:
                         category_name_to_check = category_name_to_check + " - " + category_part_name
 
-                    print("Category Name to Check: {}".format(category_name_to_check))
+                    # print("Category Name to Check: {}".format(category_name_to_check))
 
                     if category_name_to_check in categories_dict_by_name:
                         temp_parent_category_id = categories_dict_by_name[category_name_to_check]
@@ -561,7 +566,7 @@ def read_file_to_edit_segments(file_path):
                     else:
                         category_name_to_check = category_name_to_check + " - " + category_part_name
 
-                    print("Category Name to Check: {}".format(category_name_to_check))
+                    # print("Category Name to Check: {}".format(category_name_to_check))
 
                     if category_name_to_check in categories_dict_by_name:
                         temp_parent_category_id = categories_dict_by_name[category_name_to_check]
@@ -661,6 +666,7 @@ def get_data_usage_report(access_token, start_date, end_date, data_provider_id, 
                                                     "limit":REPORT_LIMIT
                                                 })
         print("Get Data Usage Report URL: {}".format(data_usage_report_request.url))
+        variables.logger.warning("{} Get Data Usage Report URL: {}".format(datetime.datetime.now().isoformat(), data_usage_report_request.url))
 
         if total_count == -1:
             is_first_loop = False
@@ -670,7 +676,7 @@ def get_data_usage_report(access_token, start_date, end_date, data_provider_id, 
         data_usage_json = data_usage_report_request.json()
         result_json_list.append(data_usage_json)
     
-    print("total count: {}".format(total_count))
+    # print("total count: {}".format(total_count))
     # print(result_json)
     return result_json_list
 
@@ -691,6 +697,7 @@ def get_audience_report(access_token, start_date, end_date, data_provider_id):
                                                     "limit":REPORT_LIMI
                                                 })
         print("Get Audience Report URL: {}".format(audience_report_request.url))
+        variables.logger.warning("{} Get Audience Report URL: {}".format(datetime.datetime.now().isoformat(), audience_report_request.url))
 
         if total_count == -1:
             is_first_loop = False
@@ -709,6 +716,7 @@ def get_data_provider_name(access_token, data_provider_id):
                                                 'Authorization':'Bearer ' + access_token
                                             })
     print("Get Data Provider URL: {}".format(get_data_provider_request.url))
+    variables.logger.warning("{} Get Data Provider URL: {}".format(datetime.datetime.now().isoformat(), get_data_provider_request.url))
     get_data_provider_json = get_data_provider_request.json()
 
     return get_data_provider_json["name"]
@@ -739,8 +747,8 @@ def read_file_to_get_report(file_path, sheet, report_type):
             return {"message":"ERROR: Report Start Date '{}' should be in date format.".format(start_date)}
 
         try:
-            end_date_date_format = datetime.strptime(str(end_date), "%Y-%m-%d %H:%M:%S") #string to date
-            end_date_date_format = end_date_date_format - timedelta(days=1)
+            end_date_date_format = datetime.datetime.strptime(str(end_date), "%Y-%m-%d %H:%M:%S") #string to date
+            end_date_date_format = end_date_date_format - datetime.timedelta(days=1)
 
             end_date = end_date_date_format.strftime('%Y-%m-%d') + "Z"
         except:

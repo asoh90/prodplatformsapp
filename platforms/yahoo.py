@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import sys
 import codecs
+import datetime
 
 topdir = os.path.join(os.path.dirname(__file__),".")
 sys.path.append(topdir)
@@ -92,7 +93,8 @@ def get_query_all():
             return{'message':"ERROR: authenticating Yahoo API. Please check .sh file if credentials are correct."}
         request_to_send = requests.get(url=url,
                         auth=oauth)
-        print("Query Request: " + request_to_send.url)
+        print("Query Request: {}".format(request_to_send.url))
+        variables.logger.warning("{} Query Request: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
         query_response = request_to_send.json()
         # print("Query Response: {}".format(query_response))
 
@@ -115,7 +117,7 @@ def get_query_all():
     except:
         return {"message":"ERROR: " + query_response["message"]}
 
-def split_segments_to_add(segment_dict, segment_name_list, segment_id, segment_description):
+def split_segments_to_add(segment_dict, segment_name_list, segment_id, segment_description, private_client_id):
     current_segment_name = segment_name_list[0]
     segment_name_list = segment_name_list[1:]
 
@@ -129,18 +131,18 @@ def split_segments_to_add(segment_dict, segment_name_list, segment_id, segment_d
             # current_segment_name is already a parent in segment_dict
             if "subTaxonomy" in segment_dict[current_segment_name]:
                 temp_segment_dict = segment_dict[current_segment_name]["subTaxonomy"]
-                segment_dict[current_segment_name]["subTaxonomy"] = split_segments_to_add(temp_segment_dict, segment_name_list, segment_id, segment_description)
+                segment_dict[current_segment_name]["subTaxonomy"] = split_segments_to_add(temp_segment_dict, segment_name_list, segment_id, segment_description, private_client_id)
             else:
-                temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id, segment_description)
+                temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id, segment_description, private_client_id)
                 segment_dict[current_segment_name]["subTaxonomy"] = temp_subTaxonomy
     # current_segment_name is not a parent in segment_dict
     else:
         # current_segment is the lowest child segment
         if len(segment_name_list) == 0:
-            segment_dict[current_segment_name] = {"id":int(segment_id),"description":str(segment_description)}
+            segment_dict[current_segment_name] = {"id":int(segment_id),"description":str(segment_description), "private_client_id":str(private_client_id)}
         # current_segment_name is not the lowest child segment
         else:
-            temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id, segment_description)
+            temp_subTaxonomy = split_segments_to_add({}, segment_name_list, segment_id, segment_description, private_client_id)
             segment_dict[current_segment_name] = {"subTaxonomy":temp_subTaxonomy}
 
     return segment_dict
@@ -162,6 +164,11 @@ def format_segment_json(segment_dict):
             new_dict["gdpr_mode"] = GDPR_MODE
             new_dict["type"] = "SEGMENT"
             new_dict["targetable"] = True
+            
+            private_client_id = segment_dict[segment_name]["private_client_id"]
+            if not private_client_id == None:
+                private_client_id_list = private_client_id.split("|")
+                new_dict["users"] = {"include":private_client_id_list}
         else:
             new_dict["name"] = segment_name
             new_dict["type"] = "SEGMENT"
@@ -188,16 +195,19 @@ def read_file_to_add_segments(file_path):
     segment_name_list = read_df["Segment Name"]
     segment_id_list = read_df["Segment ID"]
     segment_description_list = read_df["Segment Description"]
+    private_client_id_list = read_df["Private Client ID"]
     
     for row_num in range(len(segment_name_list)):
         segment_id = segment_id_list[row_num]
         segment_name = segment_name_list[row_num]
         segment_name_split = segment_name.split(" - ")
         segment_description = segment_description_list[row_num]
+        private_client_id = private_client_id_list[row_num]
 
-        segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id, segment_description)
+        segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id, segment_description, private_client_id)
     
     data = format_segment_json(segment_dict)
+    # print(data)
 
     with open (METADATA_FILE, 'w') as fp:
         json.dump(METADATA, fp)
@@ -212,6 +222,7 @@ def read_file_to_add_segments(file_path):
                                     auth=oauth,
                                     files=files)
     print("Query sent: {}".format(requests_to_send.url))
+    variables.logger.warning("{} Query Sent: {}".format(datetime.datetime.now().isoformat(), requests_to_send.url))
     query_response = requests_to_send.json()
     # print(query_response)
 

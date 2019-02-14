@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import numpy
 import time
+import datetime
 
 # Authenticate credentials
 AUTHENTICATE_URL = "https://auth.mediamath.com/oauth/token"
@@ -55,6 +56,7 @@ def authenticate():
                               'client_secret':CLIENT_SECRET
                         })
     print("Authenticate URL: {}".format(auth_request.url))
+    variables.logger.warning("{} Authenticate URL: {}".format(datetime.datetime.now().isoformat(), auth_request.url))
 
     if auth_request.status_code == 200:
         auth_response = auth_request.json()
@@ -69,6 +71,7 @@ def get_session(access_token):
                         })
 
     print("Session URL: {}".format(session_request.url))
+    variables.logger.warning("{} Session URL: {}".format(datetime.datetime.now().isoformat(), session_request.url))
 
     if session_request.status_code == 200:
         session_cookies = session_request.cookies
@@ -108,6 +111,7 @@ def get_segments(access_token, session, taxonomy_id, segment_dict):
                                 'Content-Type':"application/json"
                             })
     print("Get Segment Request: {}".format(get_segment_request.url))
+    variables.logger.warning("{} Get Segment Request: {}".format(datetime.datetime.now().isoformat(), get_segment_request.url))
 
     segment_raw_json = get_segment_request.json()
     segment_json = segment_raw_json["data"]
@@ -458,6 +462,7 @@ def refresh_segments(access_token, session, segment_dict):
                             },
                             data=json.dumps(segment_dict))
     print("Refresh Segment Request: {}".format(refresh_segment_request.url))
+    variables.logger.warning("{} Refresh Segment Request: {}".format(datetime.datetime.now().isoformat(), refresh_segment_request.url))
 
     # print(json.dumps(segment_dict))
 
@@ -469,3 +474,4 @@ def refresh_segments(access_token, session, segment_dict):
         return get_all_segments()
     else:
         return {"message": "Error: {}".format(response_json["errors"])}
+        variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), response_json))

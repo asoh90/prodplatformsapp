@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import numpy
 import time
+import datetime
 
 URL = "https://api.demdex.com:443/"
 # URL = "https://api-beta.demdex.com:443/"
@@ -103,6 +104,7 @@ def get_subscriber_contacts(access_token):
                                         })
 
     print("Get Subscriber Contacts URL: {}".format(get_subscriber_contacts_request.url))
+    variables.logger.warning("{} Get Subscriber Contacts URL: {}".format(datetime.datetime.now().isoformat(), get_subscriber_contacts_request.url))
 
     return access_token, get_subscriber_contacts_request.json()
 
@@ -154,6 +156,7 @@ def get_data_feed_plan(access_token, data_source_id):
                             'Authorization':"Bearer " + access_token
                         })
     print("Get Data Feed Plans URL: {}".format(get_data_feed_plan_request.url))
+    variables.logger.warning("{} Get Data Feed Plans URL: {}".format(datetime.datetime.now().isoformat(), get_data_feed_plan_request.url))
     
     # No data feed for this data source
     if get_data_feed_plan_request.status_code == 404:
@@ -199,6 +202,7 @@ def get_all_data_source():
                                 'Authorization':"Bearer " + access_token
                             })
     print("Get Data Source URL: {}".format(get_data_source_request.url))
+    variables.logger.warning("{} Get Data Source URL: {}".format(datetime.datetime.now().isoformat(), get_data_source_request.url))
 
     data_source_json = get_data_source_request.json()
     return access_token, data_source_json
@@ -260,6 +264,7 @@ def get_data_feed_dict(access_token):
                                 'Authorization':"Bearer " + access_token
                             })
     print("Get Data Feed URL: {}".format(get_data_feed_request.url))
+    variables.logger.warning("{} Get Data Feed URL: {}".format(datetime.datetime.now().isoformat(), get_data_feed_request.url))
 
     data_feed_json = get_data_feed_request.json()
 
@@ -314,6 +319,7 @@ def get_traits(access_token):
                                 'Authorization':"Bearer " + access_token
                             })
     print("Get Trait URL: {}".format(get_trait_request.url))
+    variables.logger.warning("{} Get Trait URL: {}".format(datetime.datetime.now().isoformat(), get_trait_request.url))
 
     trait_json = get_trait_request.json()
     # print(trait_json)
@@ -342,6 +348,7 @@ def add_trait(access_token, name, description, ttl, folderId, dataSourceId):
                             }
                         )
     print("Add Trait URL: {}".format(add_trait_request.url))
+    variables.logger.warning("{} Add Trait URL: {}".format(datetime.datetime.now().isoformat(), add_trait_request.url))
 
     add_trait_json = add_trait_request.json()
     # print(add_trait_json)
@@ -379,9 +386,11 @@ def edit_trait_rule(access_token, sid, folderId, dataSourceId, name, description
                         }
                     )
     print("Edit Trait URL: {}".format(edit_trait_request.url))
+    variables.logger.warning("{} Edit Trait URL: {}".format(datetime.datetime.now().isoformat(), edit_trait_request.url))
 
     if not edit_trait_request.status_code == 200:
         print(edit_trait_json["message"])
+        variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), edit_trait_json["message"]))
         return access_token, None
 
     edit_trait_json = edit_trait_request.json()
@@ -409,12 +418,14 @@ def add_data_source(access_token, data_source_name):
                             "dataExportRestrictions":DATA_EXPORT_RESTRICTIONS
                         })
     print("Add Data Source URL: {}".format(add_data_source_request.url))
+    variables.logger.warning("{} Add Data Source URL: {}".format(datetime.datetime.now().isoformat(), add_data_source_request.url))
 
     add_data_source_status = add_data_source_request.status_code
 
     # Fail if status code is not 201
     if not add_data_source_status == 201:
         print(add_data_source_request.json())
+        variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), add_data_source_request.json()))
         return access_token, None
 
     add_data_source_json = add_data_source_request.json()
@@ -449,6 +460,7 @@ def add_data_feed(access_token, data_source_id, data_source_name, data_feed_desc
                             )
 
     print("Add Data Feed URL: {}".format(add_data_feed_request.url))
+    variables.logger.warning("{} Add Data Feed URL: {}".format(datetime.datetime.now().isoformat(), add_data_feed_request.url))
     add_data_feed_response = add_data_feed_request.json()
 
     if not add_data_feed_request.status_code == 201:
@@ -476,6 +488,7 @@ def add_data_feed_plan(access_token, dataSourceId, useCase, billingUnit, price):
                                 )
 
     print("Add Data Feed Plan URL: {}".format(add_data_feed_plan_request.url))
+    variables.logger.warning("{} Add Data Feed Plan URL: {}".format(datetime.datetime.now().isoformat(), add_data_feed_plan_request.url))
     add_data_feed_plan_response = add_data_feed_plan_request.json()
 
     if not add_data_feed_plan_request.status_code == 201:
@@ -494,6 +507,7 @@ def get_trait_folders(access_token):
                                 }
                             )
     print("Get Trait Folder URL: {}".format(get_trait_folder_request.url))
+    variables.logger.warning("{} Get Trait Folder URL: {}".format(datetime.datetime.now().isoformat(), get_trait_folder_request.url))
     get_trait_folder_json = get_trait_folder_request.json()
     # print(get_trait_folder_json)
 
@@ -560,6 +574,7 @@ def add_trait_folder(access_token, parentFolderId, name):
                                 }
                             )
     print("Add Trait Folder URL: {}".format(add_trait_folder_request.url))
+    variables.logger.warning("{} Add Trait Folder URL: {}".format(datetime.datetime.now().isoformat(), add_trait_folder_request.url))
     # print("access token: {}".format(access_token))
     # print("parentFolderId: {}".format(parentFolderId))
     # print("name: {}".format(name))
@@ -933,6 +948,7 @@ def read_all_to_add_segments(file_path):
 
         if add_segments_authentication_timeover > 0:
             print("Authenticating...")
+            variables.logger.warning("{} Authenticating...".format(datetime.datetime.now().isoformat()))
             access_token = authenticate()
 
     os.remove(file_path)
