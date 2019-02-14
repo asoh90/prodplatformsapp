@@ -224,10 +224,15 @@ def read_file_to_add_segments(file_path):
     print("Query sent: {}".format(requests_to_send.url))
     variables.logger.warning("{} Query Sent: {}".format(datetime.datetime.now().isoformat(), requests_to_send.url))
     query_response = requests_to_send.json()
-    # print(query_response)
+    refresh_segments_status_code = requests_to_send.status_code
 
     os.remove(file_path)
     os.remove(METADATA_FILE)
     os.remove(DATA_FILE)
 
-    return {"message": "File has been uploaded. Please wait 1 hour to retrieve the updated segments."}
+    if refresh_segments_status_code == 202:
+        variables.logger.warning("{} File has been uploaded. Please wait 1 hour to retrieve the updated segments.".format(datetime.datetime.now().isoformat()))
+        return {"message": "File has been uploaded. Please wait 1 hour to retrieve the updated segments."}
+    else:
+        variables.logger.warning("{} Error {} {}".format(datetime.datetime.now().isoformat(), refresh_segments_status_code, query_response))
+        return {"message": "Error {} {}".format(refresh_segments_status_code, query_response)}
