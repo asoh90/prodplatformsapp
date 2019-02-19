@@ -34,7 +34,7 @@ SHEET_NAME = "AppNexus"
 
 appnexus_pool = None
 
-def callAPI(platform, function, file_path, loop):
+def callAPI(platform, function, file_path):
     get_urls_output = get_urls(platform)
     if "message" in get_urls_output:
         return get_urls_output
