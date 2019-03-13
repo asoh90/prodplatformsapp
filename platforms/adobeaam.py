@@ -347,6 +347,7 @@ def add_trait(access_token, name, description, ttl, folderId, dataSourceId):
                                 'status':ADD_TRAIT_STATUS
                             }
                         )
+
     print("Add Trait URL: {}".format(add_trait_request.url))
     variables.logger.warning("{} Add Trait URL: {}".format(datetime.datetime.now().isoformat(), add_trait_request.url))
 
@@ -389,8 +390,8 @@ def edit_trait_rule(access_token, sid, folderId, dataSourceId, name, description
     variables.logger.warning("{} Edit Trait URL: {}".format(datetime.datetime.now().isoformat(), edit_trait_request.url))
 
     if not edit_trait_request.status_code == 200:
-        print(edit_trait_json["message"])
-        variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), edit_trait_json["message"]))
+        print(edit_trait_request["message"])
+        variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), edit_trait_request["message"]))
         return access_token, None
 
     edit_trait_json = edit_trait_request.json()
@@ -905,6 +906,8 @@ def read_all_to_add_segments(file_path):
         if not data_source_id == None and not folder_id == None:
             segment_name = segment_name_list[row_counter]
             segment_description = segment_description_list[row_counter]
+            if pd.isna(segment_description):
+                segment_description = ""
             segment_lifetime = segment_lifetime_list[row_counter]
 
             try:
