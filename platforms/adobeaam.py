@@ -829,9 +829,9 @@ def read_all_to_add_segments(file_path):
                     
                     # Segments and overlap must be created
                     segments_and_overlap_price = segments_and_overlap_price_list[row_counter]
-                    # convert segments_and_overlap_price to int
+                    # convert segments_and_overlap_price to float
                     try:
-                        segments_and_overlap_price = int(segments_and_overlap_price)
+                        segments_and_overlap_price = float(segments_and_overlap_price)
                         access_token, segments_and_overlap_output = add_data_feed_plan(access_token, data_source_id, ["SEGMENTS_AND_OVERLAP"], ADD_DATA_FEED_PLAN_SEGMENT_AND_OVERLAP_BILLING_UNIT, segments_and_overlap_price)
                         segments_and_overlap_plan_result.append(segments_and_overlap_output)
                         create_data_source_success = True
@@ -847,9 +847,9 @@ def read_all_to_add_segments(file_path):
                         modeling_price = modeling_price_list[row_counter]
                         
                         if modeling_billing_unit == "FIXED" or modeling_billing_unit == "CPM":
-                            # convert modeling_price to int
+                            # convert modeling_price to float
                             try:
-                                modeling_price = int(modeling_price)
+                                modeling_price = float(modeling_price)
                                 access_token, modeling_plan_output = add_data_feed_plan(access_token, data_source_id, ["MODELING"], modeling_billing_unit, modeling_price)
                                 modeling_plan_result.append(modeling_plan_output)
                             except:
@@ -867,9 +867,9 @@ def read_all_to_add_segments(file_path):
                         activation_price = activation_price_list[row_counter]
                         
                         if activation_billing_unit == "FIXED" or activation_billing_unit == "CPM":
-                            # convert activation_price to int
+                            # convert activation_price to float
                             try:
-                                activation_price = int(activation_price)
+                                activation_price = float(activation_price)
                                 access_token, activation_plan_output = add_data_feed_plan(access_token, data_source_id, ['AD_TARGETING', 'PERSONALIZATION_AND_TESTING', 'FEED_EXPORT'], activation_billing_unit, activation_price)
                                 activation_plan_result.append(activation_plan_output)
                             except:
