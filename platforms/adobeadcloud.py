@@ -69,7 +69,7 @@ def read_all_to_add_segments(file_path):
         return {"message":"File Path '{}' is not found".format(file_path)}
 
     account_token_list = read_df["Account"]
-    segment_id_list = ["Eyeota Segment ID"]
+    segment_id_list = read_df["Eyeota Segment ID"]
     segment_name_list = read_df["Segment Name"]
     segment_description_list = read_df["Segment Description"]
     cpm_list = read_df["CPM"]
@@ -96,7 +96,7 @@ def read_all_to_add_segments(file_path):
                                         "partner": PARTNER,
                                         "segment_name": segment_name,
                                         "segment_description": segment_description,
-                                        "partner_segment_id": segment_id,
+                                        "partner_segment_id": str(segment_id),
                                         "billing_through_tubemogul":"F",
                                         "cpm": cpm,
                                         "retention_window_in_days": lifetime
@@ -171,7 +171,7 @@ def read_all_to_edit_segments(file_path):
             cpm = float(cpm_list[row_counter])
             lifetime = int(lifetime_list[row_counter])
 
-            edit_segment_request = requests.post(SEGMENT_URL + "/" + str(segment_id),
+            edit_segment_request = requests.put(SEGMENT_URL + "/" + str(segment_id),
                                     headers={
                                         'Content-Type':'application/json',
                                         'Authorization':"Bearer " + token
@@ -181,7 +181,7 @@ def read_all_to_edit_segments(file_path):
                                         "partner": PARTNER,
                                         "segment_name": segment_name,
                                         "segment_description": segment_description,
-                                        "partner_segment_id": segment_id,
+                                        "partner_segment_id": str(segment_id),
                                         "billing_through_tubemogul":"F",
                                         "cpm": cpm,
                                         "retention_window_in_days": lifetime,
