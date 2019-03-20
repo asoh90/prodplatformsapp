@@ -12,6 +12,8 @@ from urllib.request import Request, urlopen, URLError
 import write_excel
 import json
 import threadpool
+import logging
+from logging.handlers import RotatingFileHandler
 
 # Site
 SITE_URL = "127.0.0.1:5000"
@@ -207,6 +209,10 @@ if __name__ == "__main__":
     # Create Pool for AppNexus
     appnexus_pool = threadpool.ThreadPool(15)
     variables.thread_pool_dict["AppNexus"] = appnexus_pool
+
+    variables.logger = logging.getLogger('my_logger')
+    handler = RotatingFileHandler('logs/my_log.txt', maxBytes=10000000000, backupCount=9999)
+    variables.logger.addHandler(handler)
 
     app.config['credentials'] = sys.argv[1]
     port = 5000

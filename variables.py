@@ -19,6 +19,9 @@ login_credentials = {}
 # Pool for multithreading
 thread_pool_dict = {}
 
+# Logger for console messages
+logger = None
+
 platform_functions = {
                         "--Select Platform--":[],
                         "Adform":{"level":2,
@@ -29,6 +32,9 @@ platform_functions = {
                                  },
                         "Adobe AAM":{"level":1,
                                     "functions":["Add Segments", "Query All Segments","Query Subscriber Contacts"]
+                                    },
+                        "Adobe AdCloud":{"level":1,
+                                    "functions":["Add Custom Segments", "Edit Custom Segments"]
                                     },
                         "AppNexus Staging": {"level":2,
                                     "functions": {

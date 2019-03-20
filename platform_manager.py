@@ -17,6 +17,8 @@ def callAPI(platform, function, file_path):
         output = mediamath.callAPI(platform, function, file_path)
     elif platform == "Adobe AAM":
         output = adobeaam.callAPI(platform, function, file_path)
+    elif platform == "Adobe AdCloud":
+        output = adobeadcloud.callAPI(function, file_path)
     elif platform == "Yahoo" or platform == "Yahoo Staging":
         output = yahoo.callAPI(platform, function, file_path)
     elif platform == "All Report Platforms":
