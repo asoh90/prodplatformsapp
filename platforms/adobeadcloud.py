@@ -160,6 +160,7 @@ def read_all_to_edit_segments(file_path):
         account_token = account_token_list[row_counter]
         segment_name = segment_name_list[row_counter]
         segment_description = segment_description_list[row_counter]
+        adcloud_id = adcloud_segment_id_list[row_counter]
         
 
         try:
@@ -171,7 +172,7 @@ def read_all_to_edit_segments(file_path):
             cpm = float(cpm_list[row_counter])
             lifetime = int(lifetime_list[row_counter])
 
-            edit_segment_request = requests.put(SEGMENT_URL + "/" + str(segment_id),
+            edit_segment_request = requests.put(SEGMENT_URL + "/" + str(adcloud_id),
                                     headers={
                                         'Content-Type':'application/json',
                                         'Authorization':"Bearer " + token
