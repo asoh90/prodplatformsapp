@@ -68,7 +68,7 @@ platform_functions = {
                     }
 
 def read_credentials(input):
-    input_list = input.split("|")
+    input_list = input.split("||")
 
     for input_row in input_list:
         # print("input row: " + input_row)
