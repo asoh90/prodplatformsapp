@@ -1,7 +1,7 @@
 from platforms import *
 import asyncio
 
-loop = asyncio.get_event_loop()
+# loop = asyncio.get_event_loop()
 
 def callAPI(platform, function, file_path):
     output = {"message":"Platform not found"}
@@ -12,7 +12,8 @@ def callAPI(platform, function, file_path):
         output = adform.callAPI(function, file_path)
     # AppNexus has staging and prod environment
     elif platform == "AppNexus" or platform == "AppNexus Staging":
-        output = appnexus.callAPI(platform, function, file_path, loop)
+        # output = appnexus.callAPI(platform, function, file_path, loop)
+        output = appnexus.callAPI(platform, function, file_path)
     elif platform == "MediaMath":
         output = mediamath.callAPI(platform, function, file_path)
     elif platform == "Adobe AAM":

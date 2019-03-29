@@ -53,7 +53,7 @@ class ThreadPool:
         """Add a task to the queue"""
         self.tasks.put((func, args, kwargs))
         my_tasks = self.tasks
-        print("Total number of tasks: {}".format(my_tasks.qsize()))
+        # print("Total number of tasks: {}".format(my_tasks.qsize()))
 
     def _close_all_threads(self):
         """ Signal all threads to exit and lose the references to them """

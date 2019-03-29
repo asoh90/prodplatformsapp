@@ -195,7 +195,8 @@ def retrieve_all_segments():
             start_element += RETRIEVE_SEGMENTS_NUM_ELEMENTS
             thread_counter += 1
 
-    appnexus_pool.wait_completion()
+        appnexus_pool.wait_completion()
+        # print("Length of segment dict: {}".format(len(segment_dict)))
 
     return segment_dict
 
