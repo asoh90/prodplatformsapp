@@ -147,8 +147,6 @@ def add_or_edit(provider_element_id, parent_element_id, display_name, buyable, d
                         'Buyable':buyable,
                         'Description':str(description)
                     }
-
-    print(json_to_send)
     
     try:
         if function == "Add":
