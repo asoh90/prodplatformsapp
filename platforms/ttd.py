@@ -45,17 +45,16 @@ def callAPI(function, file_path):
         
         output = processJsonOutput(query_output, "query")
     else:
-        if (function == "Add Segments"):
-            function = "add"
-        elif (function == "Edit Segments"):
-            function = "edit"
-        add_edit_output = read_file(file_path, function)
+        if function == "Add Custom Segments":
+            function = 'Add'
+        elif function == "Edit Custom Segments":
+            function = 'Edit'
+        output = read_file_to_add_or_edit_custom_segments(file_path, function)
 
-        output = process_add_edit_output(add_edit_output, function)
     return output
 
 # get authentication code. return None if credentials fail
-def getAuthenticationCode():
+def authenticate():
     auth_code = None
     auth_request = requests.post(URL_AUTHENTICATION,
                     headers={
@@ -78,7 +77,7 @@ def getAuthenticationCode():
 
 # query all the third party data in Trade Desk system
 def get_query_all():
-    auth_code = getAuthenticationCode()
+    auth_code = authenticate()
     if (auth_code == None):
         return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
 
@@ -97,7 +96,7 @@ def get_query_all():
     # write to file
     return query_data
 
-def read_file(file_path, function):
+def read_file_to_add_or_edit_custom_segments(file_path, function):
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
 
     segment_id_list = read_df['Segment ID']
@@ -105,71 +104,82 @@ def read_file(file_path, function):
     segment_name_list = read_df['Segment Name']
     segment_description_list = read_df['Segment Description']
     buyable_list = read_df['Buyable']
+    output_list = []
 
-    output = None
-    result_list = []
-    try:
-        for row_num in segment_id_list.index:
-            provider_element_id = segment_id_list[row_num]
-            parent_element_id = str(parent_segment_id_list[row_num])
-            display_name = segment_name_list[row_num]
-            buyable = buyable_list[row_num]
-            if (buyable.lower == "buyable"):
-                buyable = True
-            else:
-                buyable = False
-            description = segment_description_list[row_num]
-            
-            # to do - call for add or edit function based on the function
-            output = add_or_edit(provider_element_id, parent_element_id, display_name, buyable, description, function)
-            result_list.append(output)
-    except Exception as e:
-        print("ERROR: " + e)
-        variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), e))
-    finally: 
-        json_output = {'Result':result_list}
-        return json_output
+    row_num = 0
+    for segment_id in segment_id_list:
+        parent_segment_id = parent_segment_id_list[row_num]
+        segment_name = segment_name_list[row_num]
+        segment_description = segment_name_list[row_num]
+        buyable = buyable_list[row_num]
+
+        output = add_or_edit(segment_id, parent_segment_id, segment_name, buyable, segment_description, function)
+        output_list.append(output)
+
+    write_df = pd.DataFrame({
+                                "Segment ID":segment_id_list,
+                                "Parent Segment ID": parent_segment_id,
+                                "Segment Name": segment_name_list,
+                                "Buyable": buyable_list,
+                                "Description": segment_description_list,
+                                "Output": output
+                            })
+
+    return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function, SHEET_NAME)
 
 # Add function returns a json format for each call, to be appended to the results before processJsonOutput
 def add_or_edit(provider_element_id, parent_element_id, display_name, buyable, description, function):
-    auth_code = getAuthenticationCode()
-    output_json_data = None
+    auth_code = authenticate()
+    output_raw_data = None
     if (auth_code == None):
         return{'message':"ERROR: getting TTD Auth Code. Please check <b>ttd.py</b> if credentials are correct."}
 
+    if not buyable:
+        buyable = False
+    else:
+        buyable = True
+
     json_to_send = {
                         'ProviderId':PROVIDER_ID,
-                        'ProviderElementId':provider_element_id,
-                        'ParentElementId':parent_element_id,
-                        'DisplayName':display_name,
+                        'ProviderElementId':str(provider_element_id),
+                        'ParentElementId':str(parent_element_id),
+                        'DisplayName':str(display_name),
                         'Buyable':buyable,
-                        'Description':description
+                        'Description':str(description)
                     }
-    if (function == "add"):
-        output_raw_data = requests.post(URL_CREATE_OR_EDIT,
-                        headers={
-                            'Content-Type':'application/json',
-                            'TTD-Auth': auth_code
-                        },
-                        json=json_to_send)
-        # print(output_raw_data)
-        output_json_data = output_raw_data.json()
-    elif (function == "edit"):
-        output_data = requests.put(URL_CREATE_OR_EDIT,
-                        headers={
-                            'Content-Type':'application/json',
-                            'TTD-Auth': auth_code
-                        },
-                        json=json_to_send)
-        # print(output_raw_data.body)
-        output_json_data = output_raw_data.json()
+
+    print(json_to_send)
     
-    result = "OK"
-    if ("Message" in output_json_data):
-        result = output_json_data["Message"]
-        print("result: {}".format(result))
-        variables.logger.warning("{} result: {}".format(datetime.datetime.now().isoformat(), result))
-    return {"message":result, "output":json_to_send}
+    try:
+        if function == "Add":
+            output_raw_data = requests.post(URL_CREATE_OR_EDIT,
+                            headers={
+                                'Content-Type':'application/json',
+                                'TTD-Auth': auth_code
+                            },
+                            json=json_to_send)
+            print("Add Custom Segments URL: {}".format(output_raw_data.url))
+        elif function == "Edit":
+            output_raw_data = requests.put(URL_CREATE_OR_EDIT,
+                            headers={
+                                'Content-Type':'application/json',
+                                'TTD-Auth': auth_code
+                            },
+                            json=json_to_send)
+            print("Edit Custom Segments URL: {}".format(output_raw_data.url))
+        output_json_data = output_raw_data.json()
+
+        if (output_raw_data.status_code == 200):
+            result = "OK"
+            variables.logger.warning("{} result: {}".format(datetime.datetime.now().isoformat(), result))
+        else:
+            result = output_json_data["Message"]
+
+        return result
+    except:
+        return "Unidentified error adding or editing segment"
+        print("Unidentified error adding or editing segment for TTD")
+        variables.logger.warning("Unidentified error adding or editing segment for TTD")
 
 def store_segment_in_dict(json_output):
     segment_dictionary = {}
@@ -236,52 +246,3 @@ def processJsonOutput(json_output, function):
     # return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function, SHEET_NAME)
     # except:
     #     return {"message":"ERROR Processing TTD Json File for Query All Segments"}
-
-def process_add_edit_output(output_list, function):
-    # try:
-        write_provider_id = []
-        write_provider_element_id = []
-        write_parent_element_id = []
-        write_display_name = []
-        write_buyable = []
-        write_description = []
-        write_audience_size = []
-        write_result = []
-
-        query_output = get_query_all()
-        segment_dictionary = store_segment_in_dict(query_output)
-
-        for row in output_list['Result']:
-            output_row = row["output"]
-            provider_id = str(output_row['ProviderId'])
-            provider_element_id = str(output_row['ProviderElementId'])
-            parent_element_id = str(output_row['ParentElementId'])
-            display_name = str(output_row['DisplayName'])
-            buyable = output_row['Buyable']
-            description = str(output_row['Description'])
-            message = str(row["message"])
-
-            # loop to get full segment name
-            if message == "OK":
-                display_name = get_full_segment_name(parent_element_id, display_name, segment_dictionary)
-
-            write_provider_id.append(provider_id)
-            write_provider_element_id.append(provider_element_id)
-            write_parent_element_id.append(parent_element_id)
-            write_display_name.append(display_name)
-            write_buyable.append(buyable)
-            write_description.append(description)
-            write_result.append(message)
-
-        write_df = pd.DataFrame({
-                                    "Provider ID":write_provider_id,
-                                    "Segment ID":write_provider_element_id,
-                                    "Parent Segment ID":write_parent_element_id,
-                                    "Segment Name":write_display_name,
-                                    "Buyable":write_buyable,
-                                    "Description":write_description,
-                                    function + " Result": write_result
-                                })
-        return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function, SHEET_NAME)
-    # except:
-    #     return {"message":"ERROR Processing TTD Json File for Add/Edit Segments"}

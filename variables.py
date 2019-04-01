@@ -54,7 +54,7 @@ platform_functions = {
                                     "functions":["Refresh Segments","Query All Segments"]
                                     },
                         "The Trade Desk": {"level":1,
-                                            "functions":["Add Segments","Edit Segments","Query All Segments"]
+                                            "functions":["Add Custom Segments","Edit Custom Segments","Query All Segments"]
                                         },
                         "Yahoo Staging":{"level":1,
                                     "functions":["Refresh Segments","Query All Segments"]
