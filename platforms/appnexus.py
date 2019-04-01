@@ -1550,7 +1550,12 @@ def get_report(start_date, end_date, report_type, row_counter, segment_dict):
 
                 is_first_segment = True
                 for targeted_segment_id in targeted_segment_ids_split:
-                    targeted_segment_name = segment_dict[int(targeted_segment_id)]["short_name"]
+                    targeted_segment_name = str(targeted_segment_id)
+                    try:
+                        targeted_segment_name = segment_dict[int(targeted_segment_id)]["short_name"]
+                    except:
+                        print("Segment ID {} is not found".format(targeted_segment_id))
+                        variables.logger.warning("Segment ID {} is not found".format(targeted_segment_id))
                     targeted_segment_id = int(targeted_segment_id)
 
                     if is_first_segment:
@@ -1863,9 +1868,9 @@ def get_segment_billing(segment_id, segment_code, current_segment_billings, bill
 
 def get_segment_billing_range(start_element, element_num, segment_billing_dict, total_elements, to_get_total_elements, counter_to_wait):
     if counter_to_wait % 4 == 0:
-        print("Sleep for 20 seconds to avoid call limit")
-        variables.logger.warning("{} Sleep for 20 seconds to avoid call limit".format(datetime.datetime.now().isoformat()))
-        time.sleep(20)
+        print("Sleep for 25 seconds to avoid call limit")
+        variables.logger.warning("{} Sleep for 25 seconds to avoid call limit".format(datetime.datetime.now().isoformat()))
+        time.sleep(25)
     
     request_to_send = requests.get(url_segment_billing_category,
                                 headers={
