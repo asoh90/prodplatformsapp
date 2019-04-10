@@ -31,7 +31,7 @@ platform_functions = {
                                     }
                                  },
                         "Adobe AAM":{"level":1,
-                                    "functions":["Add Segments", "Query All Segments","Query Subscriber Contacts"]
+                                    "functions":["Add Segments", "Edit Segments", "Query All Segments", "Query Subscriber Contacts"]
                                     },
                         "Adobe AdCloud":{"level":1,
                                     "functions":["Add Custom Segments", "Edit Custom Segments"]

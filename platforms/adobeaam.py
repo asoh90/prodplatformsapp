@@ -7,8 +7,8 @@ import numpy
 import time
 import datetime
 
-URL = "https://api.demdex.com:443/"
-# URL = "https://api-beta.demdex.com:443/"
+# URL = "https://api.demdex.com:443/"
+URL = "https://api-beta.demdex.com:443/"
 AUTH_URL = URL + "oauth/token"
 API_URL = URL + "v1/"
 DATA_SOURCE_URL = API_URL + "datasources/"
@@ -75,6 +75,8 @@ def callAPI(platform, function, file_path):
 
     if function == "Add Segments":
         output = read_all_to_add_segments(file_path)
+    elif function == "Edit Segments":
+        output = read_file_to_edit_segments(file_path)
     elif function == "Query All Segments":
         output = query_all_segments()
     elif function == "Query Subscriber Contacts":
@@ -953,6 +955,7 @@ def read_all_to_add_segments(file_path):
             print("Authenticating...")
             variables.logger.warning("{} Authenticating...".format(datetime.datetime.now().isoformat()))
             access_token = authenticate()
+            add_segments_authenticate_count += 1
 
     os.remove(file_path)
     file_name_with_extension = file_path.split("/")[-1]
@@ -996,3 +999,93 @@ def read_all_to_add_segments(file_path):
                     "Eyeota Buyer ID": eyeota_buyer_id_list
                 })
     return write_excel.write(write_df, file_name + "_output_add_segments", SHEET_NAME)
+
+def read_file_to_edit_segments(file_path):
+    edit_segments_start_time = time.time()
+    edit_segments_authenticate_count = 1
+
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+    
+    segment_id_list = read_df["Segment ID"]
+    segment_name_list = read_df["Segment Name"]
+    segment_description_list = read_df["Segment Description"]
+    segment_lifetime_list = read_df["Segment Lifetime"]
+    trait_folder_path_list = read_df["Trait Folder Path"]
+    data_source_name_list = read_df["Data Source Name"]
+    edit_trait_result = []
+
+    access_token, data_source_name_dict = get_data_source_name_dict()
+    access_token, trait_folder_json = get_trait_folders(access_token)
+    trait_folder_path_dict = get_trait_folder_path_dict(access_token, trait_folder_json)
+
+    row_counter = 0
+    for segment_name in segment_name_list:
+        trait_folder_path = trait_folder_path_list[row_counter]
+        data_source_name = data_source_name_list[row_counter]
+        segment_description = segment_description_list[row_counter]
+        segment_id = segment_id_list[row_counter]
+        segment_lifetime = segment_lifetime_list[row_counter]
+        numerical_lifetime = True
+        edit_output = ""
+
+        data_source_name_lower = data_source_name.lower()
+        data_source_id = -1
+        try:
+            data_source_id = data_source_name_dict[data_source_name_lower]
+        except:
+            print("Data Source ID not found for '{}'. ".format(data_source_name))
+            variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), "Data Source ID not found for '{}'. ".format(data_source_name)))
+            edit_output = edit_output + "Data Source ID not found for '{}'. ".format(data_source_name)
+
+        folder_id = -1
+        try:
+            folder_id = trait_folder_path_dict[trait_folder_path]
+        except:
+            print("Folder ID not found for '{}'. ".format(trait_folder_path))
+            variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), "Folder ID not found for '{}'. ".format(trait_folder_path)))
+            edit_output = edit_output + "Folder ID not found for '{}'. ".format(trait_folder_path)
+
+        try:
+            segment_lifetime = int(segment_lifetime)
+        except:
+            numerical_lifetime = False
+            print("Segment Lifetime '{}' is not numerical".format(segment_lifetime))
+            variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), "Segment Lifetime '{}' is not numerical".format(segment_lifetime)))
+            edit_output = edit_output + "Segment Lifetime '{}' is not numerical".format(segment_lifetime)
+
+        if not data_source_id == -1 and not folder_id == -1 and numerical_lifetime:
+            access_token, edit_output = edit_trait_rule(access_token, segment_id, folder_id, data_source_id, segment_name, segment_description, segment_lifetime)
+        
+        edit_trait_result.append(edit_output)
+
+        # Get access token again if process > authenticate time limit
+        edit_segments_current_time = time.time()
+        edit_segments_elapsed_secs = edit_segments_current_time - edit_segments_start_time
+        edit_segments_authentication_timeover = edit_segments_elapsed_secs - AUTHENTICATION_LIMIT_SECS * edit_segments_authenticate_count
+
+        if edit_segments_authentication_timeover > 0:
+            print("Authenticating...")
+            variables.logger.warning("{} Authenticating...".format(datetime.datetime.now().isoformat()))
+            access_token = authenticate()
+            edit_segments_authenticate_count += 1
+
+        row_counter += 1
+
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
+
+    write_df = pd.DataFrame({
+        "Segment ID":segment_id_list,
+        "Segment Name":segment_name_list,
+        "Segment Lifetime":segment_lifetime_list,
+        "Trait Folder Path":trait_folder_path_list,
+        "Data Source Name":data_source_name_list,
+        "Edit Output":edit_trait_result
+    })
+    return write_excel.write(write_df, file_name + "_output_edit_segments", SHEET_NAME)
