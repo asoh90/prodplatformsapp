@@ -170,7 +170,7 @@ def query_all_segments():
                     'Duration':write_duration_list,
                     'State':write_state_list,
                     'Is Public':write_is_public_list,
-                    'Data Segment Type ID':write_data_segment_type_id_list,
+                    'Data Segment Type':write_data_segment_type_id_list,
                     'Data Category ID':write_data_category_id_list,
                     'Member ID':write_member_id_list,
                     'Last Modified':write_last_modified_list
@@ -328,7 +328,7 @@ def read_file_to_add_segments(file_path):
     duration_list = read_df["Duration"]
     state_list = read_df["State"]
     is_public_list = read_df["Is Public"]
-    data_segment_type_id_list = read_df["Data Segment Type ID"]
+    data_segment_type_id_list = read_df["Data Segment Type"]
     data_category_id_list = read_df["Data Category ID"]
     buyer_member_id_list = read_df["Buyer Member ID"]
 
@@ -614,7 +614,7 @@ def read_file_to_add_segments(file_path):
     # print("Member ID len: {}".format(len(write_member_id_list)))
     # print("State len: {}".format(len(write_state_list)))
     # print("Is Public len: {}".format(len(write_is_public_list)))
-    # print("Data Segment Type ID len: {}".format(len(write_data_segment_type_id_list)))
+    # print("Data Segment Type len: {}".format(len(write_data_segment_type_id_list)))
     # print("Data Category ID len: {}".format(len(write_data_category_id_list)))
     # print("Buyer Member ID len: {}".format(len(write_buyer_member_id_list)))
     # print("Add Segment Response len: {}".format(len(write_response)))
@@ -630,7 +630,7 @@ def read_file_to_add_segments(file_path):
                     'Duration':write_duration_list,
                     'State':write_state_list,
                     'Is Public':write_is_public_list,
-                    'Data Segment Type ID':write_data_segment_type_id_list,
+                    'Data Segment Type':write_data_segment_type_id_list,
                     'Data Category ID':write_data_category_id_list,
                     'Buyer Member ID':write_buyer_member_id_list,
                     'Member ID':write_member_id_list,
@@ -715,7 +715,7 @@ def read_file_to_edit_segments(file_path):
     duration_list = read_df["Duration"]
     state_list = read_df["State"]
     is_public_list = read_df["Is Public"]
-    data_segment_type_id_list = read_df["Data Segment Type ID"]
+    data_segment_type_id_list = read_df["Data Segment Type"]
     data_category_id_list = read_df["Data Category ID"]
     buyer_member_id_list = read_df["Buyer Member ID"]
 
@@ -907,7 +907,7 @@ def read_file_to_edit_segments(file_path):
                 'Duration':duration_list,
                 'State':state_list,
                 'Is Public':is_public_list,
-                'Data Segment Type ID':data_segment_type_id_list,
+                'Data Segment Type':data_segment_type_id_list,
                 'Data Category ID':data_category_id_list,
                 'Buyer Member ID':buyer_member_id_list,
                 'Member ID':write_member_id_list,
@@ -1065,7 +1065,7 @@ def read_file_to_add_existing_segments_to_buyer_member(file_path):
     duration_list = read_df["Duration"]
     state_list = read_df["State"]
     is_public_list = read_df["Is Public"]
-    data_segment_type_id_list = read_df["Data Segment Type ID"]
+    data_segment_type_id_list = read_df["Data Segment Type"]
     data_category_id_list = read_df["Data Category ID"]
     buyer_member_id_list = read_df["Buyer Member ID"]
 
@@ -1154,7 +1154,7 @@ def read_file_to_add_existing_segments_to_buyer_member(file_path):
                     'Duration':write_duration_list,
                     'State':write_state_list,
                     'Is Public':write_is_public_list,
-                    'Data Segment Type ID':write_data_segment_type_id_list,
+                    'Data Segment Type':write_data_segment_type_id_list,
                     'Data Category ID':write_data_category_id_list,
                     'Buyer Member ID':write_buyer_member_id_list,
                     'Response':write_response
@@ -1229,7 +1229,7 @@ def read_file_to_add_segment_billings(file_path):
     duration_list = read_df["Duration"]
     state_list = read_df["State"]
     is_public_list = read_df["Is Public"]
-    data_segment_type_id_list = read_df["Data Segment Type ID"]
+    data_segment_type_id_list = read_df["Data Segment Type"]
     data_category_id_list = read_df["Data Category ID"]
     buyer_member_id_list = read_df["Buyer Member ID"]
     
@@ -1354,7 +1354,7 @@ def read_file_to_add_segment_billings(file_path):
                     'Member ID':write_member_id_list,
                     'State':write_state_list,
                     'Is Public':write_is_public_list,
-                    "Data Segment Type ID":write_data_segment_type_id_list,
+                    "Data Segment Type":write_data_segment_type_id_list,
                     'Data Category ID':write_data_category_id_list,
                     'Buyer Member ID':write_buyer_member_id_list,
                     'Billing Response':write_billing_response
@@ -1737,7 +1737,7 @@ def read_file_to_retrieve_segments(file_path):
                     'Member ID':write_member_id_list,
                     'State':write_state_list,
                     'Is Public':write_is_public_list,
-                    "Data Segment Type ID":write_data_segment_type_id_list,
+                    "Data Segment Type":write_data_segment_type_id_list,
                     'Data Category ID':write_data_category_id_list,
                     'Get Segment Response':write_response,
                     'Get Billing Response':write_billing_response
@@ -1848,7 +1848,7 @@ def get_segment_billing(segment_id, segment_code, current_segment_billings, bill
         is_public = segment_billing_category["is_public"]
         # print("Is Public: {}".format(is_public))
         data_segment_type_id = segment_billing_category["data_segment_type_id"]
-        # print("Data Segment Type ID: {}".format(data_segment_type_id))
+        # print("Data Segment Type: {}".format(data_segment_type_id))
         data_category_id = segment_billing_category["data_category_id"]
         # print("Data Category ID: {}".format(data_category_id))
         current_segment_billings[segment_code] = {
