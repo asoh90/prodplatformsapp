@@ -501,8 +501,8 @@ def read_file_to_add_segments(file_path):
 
         if add_segment_row_num < len(code_list):
             print("Sleep 10 seconds to avoid limit")
-            variables.logger.warning("{} Sleep 60 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
-            time.sleep(60)
+            variables.logger.warning("{} Sleep 10 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
+            time.sleep(10)
 
             add_segments_current_time = time.time()
             add_segments_elapsed_secs = add_segments_current_time - add_segments_start_time
@@ -818,9 +818,9 @@ def read_file_to_edit_segments(file_path):
         #     get_billing_thread.join()
         appnexus_pool.wait_completion()
 
-        print("Sleep 50 seconds to avoid limit")
-        variables.logger.warning("{} Sleep 50 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
-        time.sleep(50)
+        # print("Sleep 50 seconds to avoid limit")
+        # variables.logger.warning("{} Sleep 50 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
+        # time.sleep(50)
 
         edit_billing_thread_counter = 0
 
