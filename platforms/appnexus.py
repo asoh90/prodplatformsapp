@@ -663,7 +663,7 @@ def edit_segment(segment_id, code, segment_name, segment_description, price, dur
                                     },
                                     params={
                                         'member_id':MEMBER_ID,
-                                        'id':segment_id
+                                        'id':int(segment_id)
                                     },
                                     json={
                                         'segment':segment_to_edit
@@ -757,7 +757,7 @@ def read_file_to_edit_segments(file_path):
         get_billing_threads = []
 
         while edit_segment_thread_counter < THREAD_LIMIT and edit_segment_row_num < len(code_list):
-            current_segment_id = segment_id_list[edit_segment_row_num]
+            current_segment_id = int(segment_id_list[edit_segment_row_num])
             current_code = code_list[edit_segment_row_num]
             current_segment_name = segment_name_list[edit_segment_row_num]
             current_segment_description = segment_description_list[edit_segment_row_num]
@@ -781,6 +781,10 @@ def read_file_to_edit_segments(file_path):
         #     edit_segment_thread.join()
         appnexus_pool.wait_completion()
 
+        print("Sleep 60 seconds to avoid limit")
+        variables.logger.warning("{} Sleep 60 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
+        time.sleep(60)
+
         get_billing_thread_counter = 0
 
         while get_billing_thread_counter < THREAD_LIMIT and get_billing_row_num < len(code_list):
@@ -788,12 +792,14 @@ def read_file_to_edit_segments(file_path):
 
             get_billing_segment_id = None
             if not current_segments[get_billing_code] == None:
-                get_billing_segment_id = current_segments[get_billing_code]["segment_id"]
+                get_billing_segment_id = int(current_segments[get_billing_code]["segment_id"])
             
             if not get_billing_segment_id == None:
-                get_billing_process = Thread(target=get_segment_billing,args=[get_billing_segment_id, get_billing_code, current_segment_billings, get_billing_outputs])
-                get_billing_process.start()
-                get_billing_threads.append(get_billing_process)
+                appnexus_pool.add_task(get_segment_billing, get_billing_segment_id, get_billing_code, current_segment_billings, get_billing_outputs)
+
+                # get_billing_process = Thread(target=get_segment_billing,args=[get_billing_segment_id, get_billing_code, current_segment_billings, get_billing_outputs])
+                # get_billing_process.start()
+                # get_billing_threads.append(get_billing_process)
             # else:
             #     print("get_billing_code: {}".format(get_billing_code))
             #     print("get_billing_segment_id: {}".format(get_billing_segment_id))
@@ -801,8 +807,13 @@ def read_file_to_edit_segments(file_path):
             get_billing_thread_counter += 1
             get_billing_row_num += 1
 
-        for get_billing_thread in get_billing_threads:
-            get_billing_thread.join()
+        # for get_billing_thread in get_billing_threads:
+        #     get_billing_thread.join()
+        appnexus_pool.wait_completion()
+
+        print("Sleep 100 seconds to avoid limit")
+        variables.logger.warning("{} Sleep 100 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
+        time.sleep(100)
 
         edit_billing_thread_counter = 0
 
@@ -1294,10 +1305,15 @@ def read_file_to_add_segment_billings(file_path):
 
             add_billing_row_num += 1
             add_billing_thread_counter += 1
+            print("Sleep 2 seconds")
+            time.sleep(2)
 
         # for add_billing_thread in add_billing_threads:
         #     add_billing_thread.join()
         appnexus_pool.wait_completion()
+
+        print("Sleep 10 seconds to avoid limit")
+        time.sleep(10)
 
         for after_add_billing_code in current_segments:
             after_add_billing_segment = current_segments[after_add_billing_code]
@@ -1329,9 +1345,9 @@ def read_file_to_add_segment_billings(file_path):
             write_billing_response.append(after_add_billing_billing_response)
 
         if add_billing_row_num < len(segment_id_list):
-            print("Sleep 60 seconds to avoid limit")
-            variables.logger.warning("{} Sleep 60 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
-            time.sleep(60)
+            # print("Sleep 60 seconds to avoid limit")
+            # variables.logger.warning("{} Sleep 60 seconds to avoid limit".format(datetime.datetime.now().isoformat()))
+            # time.sleep(60)
 
             add_billing_current_time = time.time()
             add_billing_elapsed_secs = add_billing_current_time - add_billing_start_time
@@ -1351,12 +1367,12 @@ def read_file_to_add_segment_billings(file_path):
                     'Segment Description':write_segment_description_list,
                     'Price':write_price_list,
                     'Duration':write_duration_list,
-                    'Member ID':write_member_id_list,
                     'State':write_state_list,
                     'Is Public':write_is_public_list,
                     "Data Segment Type":write_data_segment_type_id_list,
                     'Data Category ID':write_data_category_id_list,
                     'Buyer Member ID':write_buyer_member_id_list,
+                    'Member ID':write_member_id_list,
                     'Billing Response':write_billing_response
                 })
     return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_add_billing", SHEET_NAME)
@@ -1830,7 +1846,7 @@ def get_segment_billing(segment_id, segment_code, current_segment_billings, bill
                                         'Authorization':auth_token
                                     },
                                     params={
-                                        'segment_id':segment_id
+                                        'segment_id':int(segment_id)
                                     })
         print("Get Segment Billing Request: {}".format(request_to_send.url))
         variables.logger.warning("{} Get Segment Billing Request: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))

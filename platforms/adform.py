@@ -468,7 +468,7 @@ def read_file_to_add_segments(file_path):
                 status_list[row_counter] = status
 
                 if fee_and_ttl_is_numeric:
-                    status_code, output = add_segment(access_token, region, category_id, ref_id, fee, ttl, child_segment_name)
+                    status_code, output = add_segment(access_token, region, category_id, ref_id, fee, ttl, child_segment_name, status)
                     if status_code == 201:
                         segment_id_list.append(output)
                         write_add_segment_result_list.append("OK")
@@ -766,6 +766,7 @@ def read_file_to_get_report(file_path, sheet, report_type):
 
             data_provider_name = get_data_provider_name(access_token, 67)
             for data_usage_report_row in data_usage_report_response_67_json:
+                # print("Data Usage Report Row: {}".format(data_usage_report_row))
                 write_data_provider_name_list.append(data_provider_name)
                 write_advertiser_list.append(data_usage_report_row["advertiser"])
                 write_advertiserId_list.append(data_usage_report_row["advertiserId"])
