@@ -5,6 +5,7 @@ import pandas as pd
 import datetime
 import json
 import os
+import time
 
 AUTH_URL = "https://dmp-api.adform.com/v1/token"
 API_URL = "https://api.adform.com/v1/dmp/"
@@ -23,7 +24,7 @@ SEGMENTS_URL = API_URL + "segments"
 LIMIT = 5000
 
 # Add all constants
-SEGMENT_STATUS = "inactive"
+SEGMENT_STATUS = "active"
 
 # Data Provider Name
 DATA_PROVIDER_URL = API_URL + "dataproviders/"
@@ -34,6 +35,7 @@ DATA_USAGE_REPORT_URL = REPORTS_URL + "datausage"
 AUDIENCE_REPORT_URL = REPORTS_URL + "audience"
 
 def callAPI(function, file_path):
+    start_time = time.time()
     output = {"message":"ERROR: option is not available"}
 
     if function == "Add Segments":
@@ -48,6 +50,12 @@ def callAPI(function, file_path):
     elif function == "Audience Report":
         file_names = read_file_to_get_report(file_path, SHEET_NAME, "audience")
         output = write_excel.return_report(file_names, SHEET_NAME, file_path)
+
+    elapsed_time = time.time() - start_time
+    elapsed_mins = int(elapsed_time/60)
+    elapsed_secs = int(elapsed_time%60)
+
+    print("Elapsed time: {} mins {} secs".format(elapsed_mins, elapsed_secs))
     return output
 
 def authenticate():
@@ -232,11 +240,7 @@ def get_all_segments():
     # return write_excel.write(write_df, "DONOTUPLOAD_Adform_query_all", SHEET_NAME)
 
 # Add segment functions
-def add_category(access_token, category_name, region, parent_category_id):
-    data_provider_id = "67"
-    if region.lower() == "apac":
-        data_provider_id = "11399"
-
+def add_category(access_token, category_name, data_provider_id, region, parent_category_id):
     add_category_json = None
     if parent_category_id == None:
         add_category_json = {
@@ -267,11 +271,7 @@ def add_category(access_token, category_name, region, parent_category_id):
     else:
         return None
 
-def add_segment(access_token, region, category_id, ref_id, fee, ttl, name, status):
-    data_provider_id = "67"
-    if region.lower() == "apac":
-        data_provider_id = "11399"
-
+def add_segment(access_token, data_provider_id, region, category_id, ref_id, fee, ttl, name, status):
     add_segment_request = requests.post(SEGMENTS_URL,
                             headers={
                                 "Content-Type":"application/json",
@@ -298,11 +298,7 @@ def add_segment(access_token, region, category_id, ref_id, fee, ttl, name, statu
     else:
         return None, add_segment_json["params"]
 
-def edit_segment(access_token, segment_id, region, category_id, ref_id, fee, ttl, name, status):
-    data_provider_id = "67"
-    if region.lower() == "apac":
-        data_provider_id = "11399"
-
+def edit_segment(access_token, segment_id, data_provider_id, region, category_id, ref_id, fee, ttl, name, status):
     edit_segment_request = requests.put(SEGMENTS_URL + "/" + str(segment_id),
                             headers={
                                 "Content-Type":"application/json",
@@ -310,7 +306,7 @@ def edit_segment(access_token, segment_id, region, category_id, ref_id, fee, ttl
                             },
                             json={
                                 "DataProviderId":data_provider_id,
-                                "Status":SEGMENT_STATUS,
+                                "Status":status,
                                 "CategoryId":category_id,
                                 "RefId":str(ref_id),
                                 "Fee":fee,
@@ -349,18 +345,28 @@ def store_category_in_dict_by_name(categories_json):
                                         "updatedAt":category_updatedAt,
                                         "createdAt":category_createdAt}
 
+    # Segments could hav esame name but from different data provider id (67 or 11399), hence have to keep them in separate dict
     categories_dict_by_name = {}
+    categories_dict_by_name_67 = {}
+    categories_dict_by_name_11399 = {}
 
     for category in categories_json:
         category_id = category["id"]
         category_name = category["name"]
+        category_dataProviderId = category["dataProviderId"]
         category_parent_id = None
         if "parentId" in category:
             category_parent_id = category["parentId"]
         category_full_name = get_full_category_name(category_parent_id, category_name, child_category_dict)
 
-        categories_dict_by_name[category_full_name] = category_id
+        if category_dataProviderId == "67":
+            categories_dict_by_name_67[category_full_name] = category_id
+        elif category_dataProviderId == "11399":
+            categories_dict_by_name_11399[category_full_name] = category_id
     
+    categories_dict_by_name["67"] = categories_dict_by_name_67
+    categories_dict_by_name["11399"] = categories_dict_by_name_11399
+
     return categories_dict_by_name
 
 def read_file_to_add_segments(file_path):
@@ -391,6 +397,10 @@ def read_file_to_add_segments(file_path):
     row_counter = 0
     for segment_name in segment_name_list:
         region = region_list[row_counter]
+        data_provider_id = "67"
+        if region.lower() == "apac":
+            data_provider_id = "11399"
+
         status = status_list[row_counter]
         index_of_separator = segment_name.rfind(" - ")
 
@@ -406,8 +416,9 @@ def read_file_to_add_segments(file_path):
             child_segment_name = segment_name[index_of_separator + 3:]
             category_name = segment_name[0:index_of_separator]
 
-            if category_name in categories_dict_by_name:
-                category_id = categories_dict_by_name[category_name]
+            selected_categories_dict_by_name = categories_dict_by_name[data_provider_id]
+            if category_name in selected_categories_dict_by_name:
+                category_id = selected_categories_dict_by_name[category_name]
             else:
                 parent_category_id = None
                 category_name_list = category_name.split(" - ")
@@ -424,10 +435,10 @@ def read_file_to_add_segments(file_path):
 
                     # print("Category Name to Check: {}".format(category_name_to_check))
 
-                    if category_name_to_check in categories_dict_by_name:
-                        temp_parent_category_id = categories_dict_by_name[category_name_to_check]
+                    if category_name_to_check in selected_categories_dict_by_name:
+                        temp_parent_category_id = selected_categories_dict_by_name[category_name_to_check]
                     else:
-                        temp_parent_category_id = add_category(access_token, category_part_name, region, temp_parent_category_id)
+                        temp_parent_category_id = add_category(access_token, category_part_name, data_provider_id, region, temp_parent_category_id)
 
                         if temp_parent_category_id == None:
                             segment_id_list.append(None)
@@ -436,7 +447,7 @@ def read_file_to_add_segments(file_path):
                             category_success = False
                         # category creation success
                         else:
-                            categories_dict_by_name[category_name_to_check] = temp_parent_category_id
+                            selected_categories_dict_by_name[category_name_to_check] = temp_parent_category_id
 
                     is_parentmost = False
 
@@ -454,7 +465,7 @@ def read_file_to_add_segments(file_path):
 
                 fee_and_ttl_is_numeric = True
                 try:
-                    fee = int(fee)
+                    fee = float(fee)
                     ttl = int(ttl)
                 except:
                     fee_and_ttl_is_numeric = False
@@ -468,7 +479,7 @@ def read_file_to_add_segments(file_path):
                 status_list[row_counter] = status
 
                 if fee_and_ttl_is_numeric:
-                    status_code, output = add_segment(access_token, region, category_id, ref_id, fee, ttl, child_segment_name, status)
+                    status_code, output = add_segment(access_token, data_provider_id, region, category_id, ref_id, fee, ttl, child_segment_name, status)
                     if status_code == 201:
                         segment_id_list.append(output)
                         write_add_segment_result_list.append("OK")
@@ -534,6 +545,10 @@ def read_file_to_edit_segments(file_path):
     for segment_name in segment_name_list:
         segment_id = segment_id_list[row_counter]
         region = region_list[row_counter]
+        data_provider_id = "67"
+        if region.lower() == "apac":
+            data_provider_id = "11399"
+
         status = status_list[row_counter]
         index_of_separator = segment_name.rfind(" - ")
 
@@ -548,9 +563,10 @@ def read_file_to_edit_segments(file_path):
         else:
             child_segment_name = segment_name[index_of_separator + 3:]
             category_name = segment_name[0:index_of_separator]
-
-            if category_name in categories_dict_by_name:
-                category_id = categories_dict_by_name[category_name]
+            
+            selected_categories_dict_by_name = categories_dict_by_name[data_provider_id]
+            if category_name in selected_categories_dict_by_name:
+                category_id = selected_categories_dict_by_name[category_name]
             else:
                 parent_category_id = None
                 category_name_list = category_name.split(" - ")
@@ -567,10 +583,10 @@ def read_file_to_edit_segments(file_path):
 
                     # print("Category Name to Check: {}".format(category_name_to_check))
 
-                    if category_name_to_check in categories_dict_by_name:
-                        temp_parent_category_id = categories_dict_by_name[category_name_to_check]
+                    if category_name_to_check in selected_categories_dict_by_name:
+                        temp_parent_category_id = selected_categories_dict_by_name[category_name_to_check]
                     else:
-                        temp_parent_category_id = add_category(access_token, category_part_name, region, temp_parent_category_id)
+                        temp_parent_category_id = add_category(access_token, category_part_name, data_provider_id, region, temp_parent_category_id)
 
                         if temp_parent_category_id == None:
                             segment_id_list.append(None)
@@ -579,7 +595,7 @@ def read_file_to_edit_segments(file_path):
                             category_success = False
                         # category creation success
                         else:
-                            categories_dict_by_name[category_name_to_check] = temp_parent_category_id
+                            selected_categories_dict_by_name[category_name_to_check] = temp_parent_category_id
 
                     is_parentmost = False
 
@@ -597,7 +613,7 @@ def read_file_to_edit_segments(file_path):
 
                 fee_and_ttl_is_numeric = True
                 try:
-                    fee = int(fee)
+                    fee = float(fee)
                     ttl = int(ttl)
                 except:
                     fee_and_ttl_is_numeric = False
@@ -611,7 +627,7 @@ def read_file_to_edit_segments(file_path):
                 write_status_list.append(status)
 
                 if fee_and_ttl_is_numeric:
-                    status_code, output = edit_segment(access_token, segment_id, region, category_id, ref_id, fee, ttl, child_segment_name, status)
+                    status_code, output = edit_segment(access_token, segment_id, data_provider_id, region, category_id, ref_id, fee, ttl, child_segment_name, status)
                     if status_code == 200:
                         write_segment_id_list.append(output)
                         write_edit_segment_result_list.append("OK")
