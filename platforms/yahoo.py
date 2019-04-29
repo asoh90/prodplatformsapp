@@ -70,10 +70,35 @@ def authenticate():
 def read_child_segment(parent_segment, json_file):
     global output
     if "id" in json_file:
+        segment_id = json_file['id']
+
         if "description" in json_file:
-            output.append(json_file['id'] + "|" + parent_segment + "|" + json_file['description'])
+            # output.append(json_file['id'] + "|" + parent_segment + "|" + json_file['description'])
+            output[segment_id] = {
+                "name":parent_segment,
+                "description":json_file['description']
+            }
         else:
-            output.append(json_file['id'] + "|" + parent_segment + "|")
+            # output.append(json_file['id'] + "|" + parent_segment + "|")
+            output[segment_id] = {
+                "name":parent_segment,
+                "description":None
+            }
+
+        if "users" in json_file:
+            segment_users = json_file["users"]
+            buyers_list = segment_users["include"]
+
+            buyer_string = ""
+            for buyer in buyers_list:
+                if len(buyer_string) == 0:
+                    buyer_string = buyer
+                else:
+                    buyer_string = buyer_string + "|" + buyer
+
+            output[segment_id]["private_client_id"] = buyer_string
+        else:
+            output[segment_id]["private_client_id"] = None
 
     if "subTaxonomy" in json_file:
         child_segment_list = json_file["subTaxonomy"]
@@ -81,11 +106,12 @@ def read_child_segment(parent_segment, json_file):
             read_child_segment(parent_segment + " - " + child_segment['name'], child_segment)
 
 def get_query_all():
-    global output; output = []
+    global output; output = {}
     global url
     write_name = []
     write_description = []
     write_id = []
+    write_private_client_id = []
 
     try:
         oauth = authenticate()
@@ -101,16 +127,22 @@ def get_query_all():
         for segment in query_response:
             read_child_segment(segment['name'], segment)
 
-        for row in output:
-            output_list = row.split("|")
-            write_id.append(output_list[0])
-            write_name.append(output_list[1])
-            write_description.append(output_list[2])
+        for segment_id in output:
+            output_segment = output[segment_id]
+            write_id.append(segment_id)
+            write_name.append(output_segment["name"])
+            write_description.append(output_segment["description"])
+            write_private_client_id.append(output_segment["private_client_id"])
+            # output_list = row.split("|")
+            # write_id.append(output_list[0])
+            # write_name.append(output_list[1])
+            # write_description.append(output_list[2])
 
         write_df = pd.DataFrame({
             "Segment ID":write_id,
             "Segment Name":write_name,
-            "Segment Description":write_description
+            "Segment Description":write_description,
+            "Private Client ID":write_private_client_id
         })
 
         return write_excel.write(write_df, "DONOTUPLOAD_Yahoo_" + "Query", SHEET_NAME)
@@ -165,7 +197,7 @@ def format_segment_json(segment_dict):
             new_dict["type"] = "SEGMENT"
             new_dict["targetable"] = True
             
-            private_client_id = segment_dict[segment_name]["private_client_id"]
+            private_client_id = str(segment_dict[segment_name]["private_client_id"])
             if not pd.isnull(private_client_id):
                 private_client_id_list = private_client_id.split("|")
                 new_dict["users"] = {"include":private_client_id_list}
