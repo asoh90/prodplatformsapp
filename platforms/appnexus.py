@@ -1826,7 +1826,7 @@ def edit_segment_billing(segment_billing_id, segment_id, code, state, data_categ
                                 "data_segment_type_id":str(data_segment_type_id)
                             }
     # print("Edit Billing Json request")
-    # print(segment_billing_to_edit)
+    print(segment_billing_to_edit)
     try:
         request_to_send = requests.put(url_segment_billing_category,
                                     headers={

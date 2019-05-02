@@ -53,8 +53,11 @@ platform_functions = {
                         "MediaMath": {"level":1,
                                     "functions":["Refresh Segments","Query All Segments"]
                                     },
-                        "The Trade Desk": {"level":1,
-                                            "functions":["Add Custom Segments","Edit Custom Segments","Query All Segments"]
+                        "The Trade Desk": {"level":2,
+                                            "functions":{
+                                                "Custom Segment":["Add Custom Segments","Edit Custom Segments","Query All Segments", "Retrieve Batch Status"],
+                                                "Custom Segment Rates":["Edit Custom Segment Rates", "Retrieve Partner Rates"]
+                                            }
                                         },
                         "Yahoo Staging":{"level":1,
                                     "functions":["Refresh Segments","Query All Segments"]
