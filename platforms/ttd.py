@@ -254,7 +254,6 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
 
 # Add function returns a json format for each call, to be appended to the results before processJsonOutput
 def add_or_edit(auth_code, provider_element_id, parent_element_id, display_name, buyable, description, function):
-    auth_code = authenticate()
     output_raw_data = None
 
     if not buyable:
@@ -302,7 +301,6 @@ def add_or_edit(auth_code, provider_element_id, parent_element_id, display_name,
         return {"api_error":"Unidentified error adding or editing segment"}
 
 def retrieve_partner_rates(auth_code, brand, partner_id):
-    auth_code = authenticate()
     output_raw_data = None
     
     if brand.lower() == "bombora":
@@ -435,7 +433,6 @@ def read_file_to_retrieve_partner_rates(file_path):
     return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_Partner_Rates", SHEET_NAME)
 
 def add_rate(auth_code, brand, provider_element_id, partner_id, price):
-    auth_code = authenticate()
     output_raw_data = None
     
     if brand.lower() == "bombora":
