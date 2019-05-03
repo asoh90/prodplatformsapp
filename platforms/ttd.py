@@ -22,8 +22,10 @@ UPLOAD_FOLDER = variables.UPLOAD_FOLDER
 login = None
 password = None
 
-# Provider ID
+# Fixed values
 PROVIDER_ID = "eyeota"
+BOMBORA_BRAND_ID = "eye87bom"
+EYEOTA_BRAND_ID = "fz867ve"
 
 # Parent Provider ID to ignore (i.e. not append to child name)
 TEMP_PROVIDER_ID_TO_IGNORE = ['', '1', 'ROOT', 'None']
@@ -106,11 +108,31 @@ def get_query_all(auth_code):
     query_data = post_query.json()
     return query_data
 
+def append_rates_to_push(brand, provider_element_id, partner_id, price, rates_to_push_list):
+    output_raw_data = None
+    
+    if brand.lower() == "bombora":
+        brand = "eye87bom"
+    elif brand.lower() == "eyeota":
+        brand = "fz867ve"
+    else:
+        return rates_to_push_list,{"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
+
+    rates_to_push_list.append({
+                            "ProviderElementID":str(provider_element_id),
+                            "BrandID":brand,
+                            "RateLevel": "Partner",
+                            "PartnerID":str(partner_id), # This is the seat ID
+                            "RateType":"CPM",
+                            "CPMRate": {
+                                "Amount":float(price),
+                                "CurrencyCode":"USD"
+                            }
+                        })
+    return rates_to_push_list,"OK"
+
 def retrieve_batch_id_status(auth_code, batch_id):
-    output_raw_data = requests.post(URL_DATARATE_QUERY,
-                            params={
-                                "batchId":batch_id
-                            },
+    output_raw_data = requests.get(URL_DATARATE_BATCH + "/" + batch_id,
                             headers={
                                 'Content-Type':'application/json',
                                 'TTD-Auth': auth_code
@@ -131,12 +153,14 @@ def read_file_to_retrieve_batch_id_status(file_path):
 
     write_segment_id_list = []
     batch_id_list = read_df["Batch ID"]
+    write_brand_list = []
     write_seat_id_list = []
-    write_price_id_list = []
+    write_price_list = []
     write_currency_list = []
     write_processing_status_list = []
     write_approval_status_list = []
     write_error_list = []
+    write_batch_id_list = []
 
     auth_code = authenticate()
     if (auth_code == None):
@@ -148,9 +172,11 @@ def read_file_to_retrieve_batch_id_status(file_path):
 
             if "api_error" in batch_id_status_output:
                 write_segment_id_list.append(None)
+                write_brand_list.append(None)
                 write_seat_id_list.append(None)
                 write_price_list.append(None)
                 write_currency_list.append(None)
+                write_batch_id_list.append(None)
                 write_processing_status_list.append(None)
                 write_approval_status_list.append(None)
                 write_error_list.append(batch_id_status_output["api_error"])
@@ -161,9 +187,11 @@ def read_file_to_retrieve_batch_id_status(file_path):
                 data_rates_output = batch_id_status_output["DataRates"]
                 for data_rate_output in data_rates_output:
                     write_segment_id_list.append(data_rate_output["ProviderElementId"])
+                    write_brand_list.append(data_rate_output["BrandId"])
                     write_seat_id_list.append(data_rate_output["PartnerId"])
                     write_price_list.append(float(data_rate_output["CPMRate"]["Amount"]))
-                    write_currency_list.append(float(data_rate_output["CPMRate"]["Currency"]))
+                    write_batch_id_list.append(batch_id)
+                    write_currency_list.append(data_rate_output["CPMRate"]["CurrencyCode"])
                     write_processing_status_list.append(processing_status)
                     write_approval_status_list.append(approval_status)
                     write_error_list.append(None)
@@ -172,10 +200,11 @@ def read_file_to_retrieve_batch_id_status(file_path):
 
     write_df = pd.DataFrame({
                                 "Segment ID":write_segment_id_list,
-                                "Brand": brand_list,
+                                "Brand": write_brand_list,
                                 "Seat ID": write_seat_id_list,
                                 "Price": write_price_list,
                                 "Currency": write_currency_list,
+                                "Batch ID": write_batch_id_list,
                                 "Processing Status": write_processing_status_list,
                                 "Approval Status": write_approval_status_list,
                                 "Error": write_error_list
@@ -199,6 +228,10 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
     output_list = []
     rates_output_list = []
 
+    rates_output_dict = {}
+    number_of_segments = len(segment_id_list)
+    rates_to_push_list = []
+
     auth_code = authenticate()
     if (auth_code == None):
         return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
@@ -214,28 +247,43 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
         price = price_list[row_num]
 
         output = add_or_edit(auth_code, segment_id, parent_segment_id, segment_name, buyable, segment_description, function)
-        if "auth_error" in output:
-            return output
+        if "api_error" in output:
+            output = output["api_error"]
         output_list.append(output)
 
         rate_output = None
-        # segments right below the root custom segment should add rate
-        if parent_segment_id == "bumcust" or parent_segment_id == "eyecustomseg" or parent_segment_id == "ttdratetest_partnerID_rate":
-            rate_output = add_rate(auth_code, brand, segment_id, seat_id, price)
-            rates_created_list[segment_id] = None
-        # if parent segment is not bumcust, eyecustomseg, or ttdratetest_partnerID_rate, add the segment rate
-        elif parent_segment_id not in rates_created_list:
-            rate_output = add_rate(auth_code, brand, segment_id, seat_id, price)
-            rates_created_list[segment_id] = None
+        if function == "Add":
+            # segments right below the root custom segment should add rate
+            if parent_segment_id == "bumcust" or parent_segment_id == "eyecustomseg" or parent_segment_id == "ttdratetest_partnerID_rate":
+                rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, rates_to_push_list)
+                rates_created_list[segment_id] = None
+                if "api_error" in rate_output:
+                    rates_output_dict[row_num] = rate_output["api_error"]
+            # if parent segment is not bumcust, eyecustomseg, or ttdratetest_partnerID_rate, add the segment rate
+            elif parent_segment_id not in rates_created_list:
+                rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, rates_to_push_list)
+                rates_created_list[segment_id] = None
+                if "api_error" in rate_output:
+                    rates_output_dict[row_num] = rate_output["api_error"]
 
         if rate_output is None:
-            rates_output_list.append(None)
-        elif "api_error" in rate_output:
-            rates_output_list.append(rate_output["api_error"])
-        else:
-            rates_output_list.append(rate_output)
+            rates_output_dict[row_num] = None
 
         row_num += 1
+
+    add_rates_output = None
+    if len(rates_to_push_list) > 0:
+        add_rates_output = add_rate(auth_code, rates_to_push_list)
+        if "api_error" in add_rates_output:
+            add_rates_output = add_rates_output["api_error"]
+
+    loop_counter = 0
+    while loop_counter < number_of_segments:
+        if loop_counter in rates_output_dict:
+            rates_output_list.append(rates_output_dict[loop_counter])
+        else:
+            rates_output_list.append(add_rates_output)
+        loop_counter += 1
 
     write_df = pd.DataFrame({
                                 "Segment ID":segment_id_list,
@@ -304,9 +352,9 @@ def retrieve_partner_rates(auth_code, brand, partner_id):
     output_raw_data = None
     
     if brand.lower() == "bombora":
-        brand = "eye87bom"
+        brand = BOMBORA_BRAND_ID
     elif brand.lower() == "eyeota":
-        brand = "fz867ve"
+        brand = EYEOTA_BRAND_ID
     else:
         return {"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
     
@@ -432,29 +480,12 @@ def read_file_to_retrieve_partner_rates(file_path):
 
     return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_Partner_Rates", SHEET_NAME)
 
-def add_rate(auth_code, brand, provider_element_id, partner_id, price):
+def add_rate(auth_code, rates_to_push_list):
     output_raw_data = None
-    
-    if brand.lower() == "bombora":
-        brand = "eye87bom"
-    elif brand.lower() == "eyeota":
-        brand = "fz867ve"
-    else:
-        return {"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
 
     json_to_send = {
                         "ProviderID":PROVIDER_ID,
-                        "DataRates":[{
-                            "ProviderElementID":str(provider_element_id),
-                            "BrandID":brand,
-                            "RateLevel": "Partner",
-                            "PartnerID":str(partner_id), # This is the seat ID
-                            "RateType":"CPM",
-                            "CPMRate": {
-                                "Amount":float(price),
-                                "CurrencyCode":"USD"
-                            }
-                        }]
+                        "DataRates":rates_to_push_list
                     }
 
     try:
@@ -486,19 +517,37 @@ def read_file_to_edit_custom_segment_rates(file_path):
     price_list = read_df["Price"]
     write_output_list = []
 
+    output_dict = {}
+    number_of_segments = len(segment_id_list)
+    rates_to_push_list = []
+
+    auth_code = authenticate()
+    if (auth_code == None):
+        return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
+
     row_num = 0
     for segment_id in segment_id_list:
         brand = brand_list[row_num]
         seat_id = seat_id_list[row_num]
         price = price_list[row_num]
 
-        rate_output = add_rate(auth_code, brand, segment_id, seat_id, price)
+        rates_to_push_list, append_rate_to_push_output = append_rates_to_push(brand, segment_id, seat_id, price, rates_to_push_list)
         
-        if "api_error" in rate_output:
-            write_output_list.append(rate_output["api_error"])
-        else:
-            write_output_list.append(rate_output)
+        if "api_error" in append_rate_to_push_output:
+            output_dict[row_num] = append_rate_to_push_output["api_error"]
         row_num += 1
+
+    add_rates_output = add_rate(auth_code, rates_to_push_list)
+    if "api_error" in add_rates_output:
+        add_rates_output = add_rates_output["api_error"]
+
+    loop_counter = 0
+    while loop_counter < number_of_segments:
+        if loop_counter in output_dict:
+            write_output_list.append(output_dict[loop_counter])
+        else:
+            write_output_list.append(add_rates_output)
+        loop_counter += 1
 
     write_df = pd.DataFrame({
                                 "Segment ID": segment_id_list,
