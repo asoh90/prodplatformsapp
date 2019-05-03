@@ -41,7 +41,11 @@ def callAPI(function, file_path):
 
     output = "ERROR: option is not available"
     if function == "Query All Segments":
-        query_output = get_query_all()
+        auth_code = authenticate()
+        if (auth_code == None):
+            return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
+
+        query_output = get_query_all(auth_code)
         # Error retrieving query
         if "auth_error" in query_output:
             return query_output
@@ -85,11 +89,7 @@ def authenticate():
         return auth_code
 
 # query all the third party data in Trade Desk system
-def get_query_all():
-    auth_code = authenticate()
-    if (auth_code == None):
-        return{'auth_error':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
-
+def get_query_all(auth_code):
     post_query = requests.post(URL_QUERY,
                     headers={
                         'Content-Type':'application/json',
@@ -106,11 +106,7 @@ def get_query_all():
     query_data = post_query.json()
     return query_data
 
-def retrieve_batch_id_status(batch_id):
-    auth_code = authentication()
-    if (auth_code == None):
-        return{'auth_error':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
-
+def retrieve_batch_id_status(auth_code, batch_id):
     output_raw_data = requests.post(URL_DATARATE_QUERY,
                             params={
                                 "batchId":batch_id
@@ -142,13 +138,15 @@ def read_file_to_retrieve_batch_id_status(file_path):
     write_approval_status_list = []
     write_error_list = []
 
+    auth_code = authenticate()
+    if (auth_code == None):
+        return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
+
     for batch_id in batch_id_list:
         if not batch_id in batch_id_checked:
-            batch_id_status_output = retrieve_batch_id_status(batch_id)
+            batch_id_status_output = retrieve_batch_id_status(auth_code, batch_id)
 
-            if "auth_error" in batch_id_status_output:
-                return batch_id_status_output
-            elif "api_error" in batch_id_status_output:
+            if "api_error" in batch_id_status_output:
                 write_segment_id_list.append(None)
                 write_seat_id_list.append(None)
                 write_price_list.append(None)
@@ -201,6 +199,10 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
     output_list = []
     rates_output_list = []
 
+    auth_code = authenticate()
+    if (auth_code == None):
+        return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
+
     row_num = 0
     for segment_id in segment_id_list:
         parent_segment_id = parent_segment_id_list[row_num]
@@ -211,7 +213,7 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
         seat_id = seat_id_list[row_num]
         price = price_list[row_num]
 
-        output = add_or_edit(segment_id, parent_segment_id, segment_name, buyable, segment_description, function)
+        output = add_or_edit(auth_code, segment_id, parent_segment_id, segment_name, buyable, segment_description, function)
         if "auth_error" in output:
             return output
         output_list.append(output)
@@ -219,17 +221,15 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
         rate_output = None
         # segments right below the root custom segment should add rate
         if parent_segment_id == "bumcust" or parent_segment_id == "eyecustomseg" or parent_segment_id == "ttdratetest_partnerID_rate":
-            rate_output = add_rate(brand, segment_id, seat_id, price)
+            rate_output = add_rate(auth_code, brand, segment_id, seat_id, price)
             rates_created_list[segment_id] = None
         # if parent segment is not bumcust, eyecustomseg, or ttdratetest_partnerID_rate, add the segment rate
         elif parent_segment_id not in rates_created_list:
-            rate_output = add_rate(brand, segment_id, seat_id, price)
+            rate_output = add_rate(auth_code, brand, segment_id, seat_id, price)
             rates_created_list[segment_id] = None
 
         if rate_output is None:
             rates_output_list.append(None)
-        elif "auth_error" in rate_output:
-            return rate_output
         elif "api_error" in rate_output:
             rates_output_list.append(rate_output["api_error"])
         else:
@@ -253,11 +253,9 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
     return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function, SHEET_NAME)
 
 # Add function returns a json format for each call, to be appended to the results before processJsonOutput
-def add_or_edit(provider_element_id, parent_element_id, display_name, buyable, description, function):
+def add_or_edit(auth_code, provider_element_id, parent_element_id, display_name, buyable, description, function):
     auth_code = authenticate()
     output_raw_data = None
-    if (auth_code == None):
-        return{'auth_error':"ERROR: getting TTD Auth Code. Please check <b>ttd.py</b> if credentials are correct."}
 
     if not buyable:
         buyable = False
@@ -304,11 +302,9 @@ def add_or_edit(provider_element_id, parent_element_id, display_name, buyable, d
         variables.logger.warning("Unidentified error adding or editing segment for TTD")
         return "Unidentified error adding or editing segment"
 
-def retrieve_partner_rates(brand, partner_id):
+def retrieve_partner_rates(auth_code, brand, partner_id):
     auth_code = authenticate()
     output_raw_data = None
-    if (auth_code == None):
-        return{'auth_error':"ERROR: getting TTD Auth Code. Please check <b>ttd.py</b> if credentials are correct."}
     
     if brand.lower() == "bombora":
         brand = "eye87bom"
@@ -358,7 +354,11 @@ def read_file_to_retrieve_partner_rates(file_path):
     write_currency_list = []
     write_output_list = []
 
-    segment_json = get_query_all()
+    auth_code = authenticate()
+    if (auth_code == None):
+        return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
+
+    segment_json = get_query_all(auth_code)
     segment_dict = store_segment_in_dict(segment_json)
     segment_formatted_dictionary = {}
 
@@ -392,11 +392,9 @@ def read_file_to_retrieve_partner_rates(file_path):
         if not seat_id in seat_id_dict:
             seat_id_dict[seat_id] = None
 
-            partner_rates_output = retrieve_partner_rates(brand, seat_id)
+            partner_rates_output = retrieve_partner_rates(auth_code, brand, seat_id)
 
-            if "auth_error" in partner_rates_output:
-                return partner_rates_output
-            elif "api_error" in partner_rates_output:
+            if "api_error" in partner_rates_output:
                 write_brand_list.append(brand)
                 write_seat_id_list.append(seat_id)
                 write_segment_id_list.append(None)
@@ -437,12 +435,10 @@ def read_file_to_retrieve_partner_rates(file_path):
 
     return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_Partner_Rates", SHEET_NAME)
 
-def add_rate(brand, provider_element_id, partner_id, price):
+def add_rate(auth_code, brand, provider_element_id, partner_id, price):
     auth_code = authenticate()
     output_raw_data = None
-    if (auth_code == None):
-        return{'auth_error':"ERROR: getting TTD Auth Code. Please check <b>ttd.py</b> if credentials are correct."}
-
+    
     if brand.lower() == "bombora":
         brand = "eye87bom"
     elif brand.lower() == "eyeota":
@@ -500,11 +496,9 @@ def read_file_to_edit_custom_segment_rates(file_path):
         seat_id = seat_id_list[row_num]
         price = price_list[row_num]
 
-        rate_output = add_rate(brand, segment_id, seat_id, price)
+        rate_output = add_rate(auth_code, brand, segment_id, seat_id, price)
         
-        if "auth_error" in rate_output:
-            return rate_output
-        elif "api_error" in rate_output:
+        if "api_error" in rate_output:
             write_output_list.append(rate_output["api_error"])
         else:
             write_output_list.append(rate_output)
