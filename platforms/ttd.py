@@ -112,9 +112,9 @@ def append_rates_to_push(brand, provider_element_id, partner_id, price, rates_to
     output_raw_data = None
     
     if brand.lower() == "bombora":
-        brand = "eye87bom"
+        brand = BOMBORA_BRAND_ID
     elif brand.lower() == "eyeota":
-        brand = "fz867ve"
+        brand = EYEOTA_BRAND_ID
     else:
         return rates_to_push_list,{"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
 
@@ -152,6 +152,8 @@ def read_file_to_retrieve_batch_id_status(file_path):
     batch_id_checked = {}
 
     write_segment_id_list = []
+    write_segment_name_list = []
+    write_segment_description_list = []
     batch_id_list = read_df["Batch ID"]
     write_brand_list = []
     write_seat_id_list = []
@@ -166,12 +168,36 @@ def read_file_to_retrieve_batch_id_status(file_path):
     if (auth_code == None):
         return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
 
+    segment_json = get_query_all(auth_code)
+    segment_dict = store_segment_in_dict(segment_json)
+    segment_formatted_dictionary = {}
+
+    for row in segment_json['Result']:
+        provider_id = str(row['ProviderId'])
+        provider_element_id = str(row['ProviderElementId'])
+        parent_element_id = str(row['ParentElementId'])
+        display_name = str(row['DisplayName'])
+        buyable = row['Buyable']
+        description = str(row['Description'])
+        audience_size = str(row['AudienceSize'])
+
+        # loop to get full segment name
+        display_name = get_full_segment_name(parent_element_id, display_name, segment_dict)
+        
+        segment_formatted_dictionary[provider_element_id] = {
+            "name":display_name,
+            "buyable":buyable,
+            "description":description
+        }
+
     for batch_id in batch_id_list:
         if not batch_id in batch_id_checked:
             batch_id_status_output = retrieve_batch_id_status(auth_code, batch_id)
 
             if "api_error" in batch_id_status_output:
                 write_segment_id_list.append(None)
+                write_segment_name_list.append(None)
+                write_segment_description_list.append(None)
                 write_brand_list.append(None)
                 write_seat_id_list.append(None)
                 write_price_list.append(None)
@@ -186,12 +212,23 @@ def read_file_to_retrieve_batch_id_status(file_path):
 
                 data_rates_output = batch_id_status_output["DataRates"]
                 for data_rate_output in data_rates_output:
-                    write_segment_id_list.append(data_rate_output["ProviderElementId"])
-                    write_brand_list.append(data_rate_output["BrandId"])
+                    segment_id = data_rate_output["ProviderElementId"]
+                    write_segment_id_list.append(segment_id)
+                    segment = segment_formatted_dictionary[segment_id]
+                    write_segment_name_list.append(segment["name"])
+                    write_segment_description_list.append(segment["description"])
+
+                    brand_id = data_rate_output["BrandId"]
+                    if brand_id == BOMBORA_BRAND_ID:
+                        brand_id = "bombora"
+                    elif brand_id == EYEOTA_BRAND_ID:
+                        brand_id = "eyeota"
+
+                    write_brand_list.append(brand_id)
                     write_seat_id_list.append(data_rate_output["PartnerId"])
                     write_price_list.append(float(data_rate_output["CPMRate"]["Amount"]))
-                    write_batch_id_list.append(batch_id)
                     write_currency_list.append(data_rate_output["CPMRate"]["CurrencyCode"])
+                    write_batch_id_list.append(batch_id)
                     write_processing_status_list.append(processing_status)
                     write_approval_status_list.append(approval_status)
                     write_error_list.append(None)
@@ -200,6 +237,8 @@ def read_file_to_retrieve_batch_id_status(file_path):
 
     write_df = pd.DataFrame({
                                 "Segment ID":write_segment_id_list,
+                                "Segment Name": write_segment_name_list,
+                                "Segment_Description": write_segment_description_list,
                                 "Brand": write_brand_list,
                                 "Seat ID": write_seat_id_list,
                                 "Price": write_price_list,
