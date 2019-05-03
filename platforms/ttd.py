@@ -292,7 +292,6 @@ def add_or_edit(auth_code, provider_element_id, parent_element_id, display_name,
 
         if (output_raw_data.status_code == 200):
             result = "OK"
-            variables.logger.warning("{} result: {}".format(datetime.datetime.now().isoformat(), result))
         else:
             result = output_json_data["Message"]
 
@@ -300,7 +299,7 @@ def add_or_edit(auth_code, provider_element_id, parent_element_id, display_name,
     except:
         print("Unidentified error adding or editing segment for TTD")
         variables.logger.warning("Unidentified error adding or editing segment for TTD")
-        return "Unidentified error adding or editing segment"
+        return {"api_error":"Unidentified error adding or editing segment"}
 
 def retrieve_partner_rates(auth_code, brand, partner_id):
     auth_code = authenticate()
@@ -334,7 +333,7 @@ def retrieve_partner_rates(auth_code, brand, partner_id):
     except:
         print("Unidentified error retrieving partner data rates")
         variables.logger.warning("Unidentified error retrieving partner data rates")
-        return {"error": "Unidentified error retrieving partner data rates"}
+        return {"api_error": "Unidentified error retrieving partner data rates"}
 
 def read_file_to_retrieve_partner_rates(file_path):
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
@@ -479,7 +478,7 @@ def add_rate(auth_code, brand, provider_element_id, partner_id, price):
     except:
         print("Unidentified error with Rates API")
         variables.logger.warning("Unidentified error with Rates API")
-        return "Unidentified error with Rates API"
+        return {"api_error":"Unidentified error with Rates API"}
 
 def read_file_to_edit_custom_segment_rates(file_path):
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
