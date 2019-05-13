@@ -28,7 +28,7 @@ output = None
 # Add Taxo Fixed Information
 EXTENSIONS = {"urnType":"testid"}
 METADATA = {"description":"Eyeota Taxonomy"}
-GDPR_MODE = "oath_is_controller"
+GDPR_MODE = "oath_is_processor"
 
 METADATA_FILE = "upload/metadata.json"
 DATA_FILE = "upload/data.json"
@@ -234,7 +234,11 @@ def read_file_to_add_segments(file_path):
         segment_name = segment_name_list[row_num]
         segment_name_split = segment_name.split(" - ")
         segment_description = segment_description_list[row_num]
-        private_client_id = private_client_id_list[row_num]
+        private_client_id = None
+        try:
+            private_client_id = str(int(private_client_id_list[row_num]))
+        except:
+            private_client_id = private_client_id_list[row_num]
 
         segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id, segment_description, private_client_id)
     
