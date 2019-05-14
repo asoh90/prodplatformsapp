@@ -7,6 +7,7 @@ import os
 import sys
 import codecs
 import datetime
+import numpy
 
 topdir = os.path.join(os.path.dirname(__file__),".")
 sys.path.append(topdir)
@@ -197,8 +198,9 @@ def format_segment_json(segment_dict):
             new_dict["type"] = "SEGMENT"
             new_dict["targetable"] = True
             
-            private_client_id = str(segment_dict[segment_name]["private_client_id"])
-            if not pd.isnull(private_client_id):
+            private_client_id = segment_dict[segment_name]["private_client_id"]
+            if not private_client_id is None:
+                private_client_id = str(private_client_id)
                 private_client_id_list = private_client_id.split("|")
                 new_dict["users"] = {"include":private_client_id_list}
         else:
@@ -234,11 +236,12 @@ def read_file_to_add_segments(file_path):
         segment_name = segment_name_list[row_num]
         segment_name_split = segment_name.split(" - ")
         segment_description = segment_description_list[row_num]
-        private_client_id = None
+        private_client_id = private_client_id_list[row_num]
         try:
-            private_client_id = str(int(private_client_id_list[row_num]))
+            private_client_id = str(int(private_client_id))
         except:
-            private_client_id = private_client_id_list[row_num]
+            if numpy.isnan(private_client_id):
+                private_client_id = None
 
         segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id, segment_description, private_client_id)
     
