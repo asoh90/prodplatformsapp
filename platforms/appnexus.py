@@ -531,7 +531,7 @@ def read_file_to_add_segments(file_path):
             while private_segment_thread_counter < THREAD_LIMIT and private_segment_row_num < len(private_segments_to_add):
                 buyer_member_id = private_segments_to_add[private_segment_row_num]
                 buyer_member_private_segment_list = private_segment_list[buyer_member_id]
-                private_segment_response = refresh_segments(buyer_member_id, buyer_member_private_segment_list)
+                private_segment_response = add_private_segments(buyer_member_id, buyer_member_private_segment_list)
                 # print(private_segment_response)
 
                 for segment_id in private_segment_response:
@@ -939,25 +939,21 @@ def read_file_to_edit_segments(file_path):
     return write_excel.write(write_df, "DONOTUPLOAD_" + file_name + "_edit_segments", SHEET_NAME)
 
 # overwrites segments for specific buyer member id
-def refresh_segments(buyer_member_id, buyer_member_private_segment_list):
-    retrieve_results = retrieve_segments_for_member(buyer_member_id)
-    record_id = retrieve_results["record_id"]
-    current_segment_list = retrieve_results["segment_list"]
-    if current_segment_list == None:
-        return
+def add_private_segments(buyer_member_id, buyer_member_private_segment_list):
     current_segment_id_list = []
     updated_segment_list = []
-    
-    for current_segment in current_segment_list:
-        current_segment_id_list.append(current_segment["id"])
-        updated_segment_list.append({"id":current_segment["id"]})
 
     for private_segment in buyer_member_private_segment_list:
-        if private_segment not in current_segment_id_list:
-            updated_segment_list.append({"id":buyer_member_private_segment_list[private_segment]["segment_id"]})
-            current_segment_id_list.append(buyer_member_private_segment_list[private_segment]["segment_id"])
+        updated_segment_list.append({"id":buyer_member_private_segment_list[private_segment]["segment_id"]})
+        current_segment_id_list.append(buyer_member_private_segment_list[private_segment]["segment_id"])
 
-    response = refresh_segment_ids(record_id, updated_segment_list)
+    retrieve_results = retrieve_segments_for_member(buyer_member_id)
+    current_segment_list = retrieve_results["segment_list"]
+    if current_segment_list == None:
+        response = add_segment_id_to_new_buyer(buyer_member_id, updated_segment_list)
+    else:
+        record_id = retrieve_results["record_id"]
+        response = add_segment_id_to_buyer(record_id, updated_segment_list)
 
     for private_segment in buyer_member_private_segment_list:
         buyer_member_private_segment_list[private_segment]["response"] = response
@@ -991,9 +987,37 @@ def retrieve_segments_for_member(buyer_member_id):
         variables.logger.warning("{} ERROR: {}".format(datetime.datetime.now().isoformat(), retrieve_response["response"]["error"]))
 
 # overwrite segment ids for specific record_id
-def refresh_segment_ids(record_id, new_segment_id_list):
-    print("Refreshing record id: {}".format(record_id))
+def add_segment_id_to_new_buyer(buyer_member_id, new_segment_id_list):
+    print("Add Segment IDs to New Buyer: {}".format(record_id))
     variables.logger.warning("{} Refreshing record id: {}".format(datetime.datetime.now().isoformat(), record_id))
+
+    segment_list_to_send = {"segments":new_segment_id_list}
+
+    try:
+        request_to_send = requests.POST(url_buyer_member_data_sharing,
+                                                headers={
+                                                    'Content-Type':'application/json',
+                                                    'Authorization':auth_token
+                                                },
+                                                json={
+                                                    'segment_exposure':'list',
+                                                    'buyer_member_id':buyer_member_id,
+                                                    'member_data_sharing':segment_list_to_send
+                                                })
+        print("Add Segment IDs to New Buyer URL: {}".format(request_to_send.url))
+        variables.logger.warning("{} Add Segment IDs to New Buyer URL: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
+        refresh_response = request_to_send.json()
+        return refresh_response["response"]["status"]
+    except Exception as e:
+        if request_to_send.status_code == 504:
+            return "timed out"
+
+        return refresh_response["response"]["error"]
+
+# overwrite segment ids for specific record_id
+def add_segment_id_to_buyer(record_id, new_segment_id_list):
+    print("Add Segment IDs to Buyer: {}".format(record_id))
+    variables.logger.warning("{} Add Segment IDs to Buyer: {}".format(datetime.datetime.now().isoformat(), record_id))
 
     segment_list_to_send = {"segments":new_segment_id_list}
 
@@ -1004,13 +1028,14 @@ def refresh_segment_ids(record_id, new_segment_id_list):
                                                     'Authorization':auth_token
                                                 },
                                                 params={
-                                                    'id':record_id
+                                                    'id':record_id,
+                                                    'append':"true"
                                                 },
                                                 json={
                                                     'member_data_sharing':segment_list_to_send
                                                 })
-        print("Refresh Request URL: {}".format(request_to_send.url))
-        variables.logger.warning("{} Refresh Request URL: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
+        print("Add Segment IDs to Buyer URL: {}".format(request_to_send.url))
+        variables.logger.warning("{} Add Segment IDs to Buyer URL: {}".format(datetime.datetime.now().isoformat(), request_to_send.url))
         refresh_response = request_to_send.json()
         return refresh_response["response"]["status"]
     except Exception as e:
@@ -1147,7 +1172,7 @@ def read_file_to_add_existing_segments_to_buyer_member(file_path):
     if len(private_segments_to_add) > 0:
         for buyer_member_id in private_segments_to_add:
             buyer_member_private_segment_list = private_segment_dict[buyer_member_id]
-            private_segment_response = refresh_segments(buyer_member_id, buyer_member_private_segment_list)
+            private_segment_response = add_private_segments(buyer_member_id, buyer_member_private_segment_list)
 
             for segment_id in private_segment_response:
                 private_segment_details = private_segment_response[segment_id]
