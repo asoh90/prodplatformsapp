@@ -280,6 +280,8 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
         parent_segment_id = parent_segment_id_list[row_num]
         segment_name = segment_name_list[row_num]
         segment_description = segment_name_list[row_num]
+        if pd.is
+
         buyable = buyable_list[row_num]
         brand = brand_list[row_num]
         seat_id = seat_id_list[row_num]
