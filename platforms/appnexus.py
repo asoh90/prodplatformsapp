@@ -262,6 +262,7 @@ def retrieve_segments(start_element, num_elements, segment_dict, total_segments)
 # Start Add Segments functions
 # Many input fields due to multithreading. current_segments will then be called again so that all the data are aligned
 def add_segment(code, segment_name, segment_description, price, duration, state, is_public, data_segment_type_id, data_category_id, buyer_member_id, current_segments, output_messages):
+    response = "Error before calling Add Request API, please ensure duration is in numbers and price is in numbers or decimals."
     try:
         segment_to_add = {
                         "code":str(code),
