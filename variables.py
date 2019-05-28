@@ -27,7 +27,8 @@ platform_functions = {
                         "Adform":{"level":2,
                                     "functions":{
                                         "Segment":["Add Segments", "Edit Segments", "Query All Segments"],
-                                        "Report":["Audience Report","Data Usage Report"]
+                                        "Report":["Audience Report","Data Usage Report"],
+                                        "Delete Segment":["Delete Segments"]
                                     }
                                  },
                         "Adobe AAM":{"level":1,
