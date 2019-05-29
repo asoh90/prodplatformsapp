@@ -950,7 +950,7 @@ def add_private_segments(buyer_member_id, buyer_member_private_segment_list):
 
     retrieve_results = retrieve_segments_for_member(buyer_member_id)
     current_segment_list = retrieve_results["segment_list"]
-    if current_segment_list == None:
+    if len(current_segment_list) == 0:
         response = add_segment_id_to_new_buyer(buyer_member_id, updated_segment_list)
     else:
         record_id = retrieve_results["record_id"]
