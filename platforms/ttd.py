@@ -118,13 +118,13 @@ def append_rates_to_push(brand, provider_element_id, partner_id, price, price_ty
     else:
         return rates_to_push_list,{"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
 
-    if price_type == "CPM":
+    if price_type.lower() == "cpm":
         rates_to_push_list.append({
                                 "ProviderElementID":str(provider_element_id),
                                 "BrandID":brand,
                                 "RateLevel": "Partner",
                                 "PartnerID":str(partner_id), # This is the seat ID
-                                "RateType":price_type,
+                                "RateType":"CPM",
                                 "CPMRate": {
                                     "Amount":float(price),
                                     "CurrencyCode":"USD"
@@ -136,7 +136,7 @@ def append_rates_to_push(brand, provider_element_id, partner_id, price, price_ty
                                 "BrandID":brand,
                                 "RateLevel": "Partner",
                                 "PartnerID":str(partner_id), # This is the seat ID
-                                "RateType":price_type,
+                                "RateType":"PercentOfMediaCost",
                                 "PercentOfMediaCostRate": float(price)
                             })
     return rates_to_push_list,"OK"
