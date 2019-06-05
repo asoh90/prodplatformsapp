@@ -108,7 +108,7 @@ def get_query_all(auth_code):
     query_data = post_query.json()
     return query_data
 
-def append_rates_to_push(brand, provider_element_id, partner_id, price, rates_to_push_list):
+def append_rates_to_push(brand, provider_element_id, partner_id, price, price_type, rates_to_push_list):
     output_raw_data = None
     
     if brand.lower() == "bombora":
@@ -118,17 +118,27 @@ def append_rates_to_push(brand, provider_element_id, partner_id, price, rates_to
     else:
         return rates_to_push_list,{"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
 
-    rates_to_push_list.append({
-                            "ProviderElementID":str(provider_element_id),
-                            "BrandID":brand,
-                            "RateLevel": "Partner",
-                            "PartnerID":str(partner_id), # This is the seat ID
-                            "RateType":"CPM",
-                            "CPMRate": {
-                                "Amount":float(price),
-                                "CurrencyCode":"USD"
-                            }
-                        })
+    if price_type == "CPM":
+        rates_to_push_list.append({
+                                "ProviderElementID":str(provider_element_id),
+                                "BrandID":brand,
+                                "RateLevel": "Partner",
+                                "PartnerID":str(partner_id), # This is the seat ID
+                                "RateType":price_type,
+                                "CPMRate": {
+                                    "Amount":float(price),
+                                    "CurrencyCode":"USD"
+                                }
+                            })
+    else:
+        rates_to_push_list.append({
+                                "ProviderElementID":str(provider_element_id),
+                                "BrandID":brand,
+                                "RateLevel": "Partner",
+                                "PartnerID":str(partner_id), # This is the seat ID
+                                "RateType":price_type,
+                                "PercentOfMediaCostRate": float(price)
+                            })
     return rates_to_push_list,"OK"
 
 def retrieve_batch_id_status(auth_code, batch_id):
@@ -264,6 +274,7 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
     brand_list = read_df['Brand']
     seat_id_list = read_df['Seat ID']
     price_list = read_df['Price']
+    price_type_list = read_df['Price Type']
     output_list = []
     rates_output_list = []
 
@@ -285,6 +296,7 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
         brand = brand_list[row_num]
         seat_id = seat_id_list[row_num]
         price = price_list[row_num]
+        price_type = price_type_list[row_num]
 
         output = add_or_edit(auth_code, segment_id, parent_segment_id, segment_name, buyable, segment_description, function)
         if "api_error" in output:
@@ -295,13 +307,13 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
         if function == "Add":
             # segments right below the root custom segment should add rate
             if parent_segment_id == "bumcust" or parent_segment_id == "eyecustomseg" or parent_segment_id == "ttdratetest_partnerID_rate":
-                rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, rates_to_push_list)
+                rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
                 rates_created_list[segment_id] = None
                 if "api_error" in rate_output:
                     rates_output_dict[row_num] = rate_output["api_error"]
             # if parent segment is not bumcust, eyecustomseg, or ttdratetest_partnerID_rate, add the segment rate
             elif parent_segment_id not in rates_created_list:
-                rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, rates_to_push_list)
+                rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
                 rates_created_list[segment_id] = None
                 if "api_error" in rate_output:
                     rates_output_dict[row_num] = rate_output["api_error"]
@@ -334,6 +346,7 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
                                 "Brand": brand_list,
                                 "Seat ID": seat_id_list,
                                 "Price": price_list,
+                                "Price Type": price_type_list,
                                 "Output": output_list,
                                 "Rates Output": rates_output_list
                             })
@@ -555,6 +568,7 @@ def read_file_to_edit_custom_segment_rates(file_path):
     brand_list = read_df["Brand"]
     seat_id_list = read_df["Seat ID"]
     price_list = read_df["Price"]
+    price_type_list = read_df["Price Type"]
     write_output_list = []
 
     output_dict = {}
@@ -570,8 +584,9 @@ def read_file_to_edit_custom_segment_rates(file_path):
         brand = brand_list[row_num]
         seat_id = seat_id_list[row_num]
         price = price_list[row_num]
+        price_type = price_type_list[row_num]
 
-        rates_to_push_list, append_rate_to_push_output = append_rates_to_push(brand, segment_id, seat_id, price, rates_to_push_list)
+        rates_to_push_list, append_rate_to_push_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
         
         if "api_error" in append_rate_to_push_output:
             output_dict[row_num] = append_rate_to_push_output["api_error"]
@@ -594,6 +609,7 @@ def read_file_to_edit_custom_segment_rates(file_path):
                                 "Brand":brand_list,
                                 "Seat ID": seat_id_list,
                                 "Price": price_list,
+                                "Price Type": price_type_list,
                                 "Output": write_output_list
                             })
 
