@@ -81,6 +81,8 @@ def callAPI(platform, function, file_path):
         output = query_all_segments()
     elif function == "Query Subscriber Contacts":
         output = get_all_subscriber_contacts()
+    elif function == "Get Data Source Uniques":
+        output = read_all_to_get_uniques_report(file_path)
     
     return output
 
@@ -1089,3 +1091,107 @@ def read_file_to_edit_segments(file_path):
         "Edit Output":edit_trait_result
     })
     return write_excel.write(write_df, file_name + "_output_edit_segments", SHEET_NAME)
+
+def get_trait_uniques(access_token, dataSourceId):
+    if access_token == None:
+        access_token = authenticate()
+
+    get_trait_request = requests.get(TRAIT_URL,
+                            params={
+                                'includeDetails':True,
+                                'includeMetrics':True,
+                                'dataSourceId':dataSourceId
+                            },
+                            headers={
+                                'Authorization':"Bearer " + access_token
+                            })
+    print("Get Trait URL: {}".format(get_trait_request.url))
+    variables.logger.warning("{} Get Trait URL: {}".format(datetime.datetime.now().isoformat(), get_trait_request.url))
+
+    return access_token, get_trait_request.json()
+
+def read_all_to_get_uniques_report(file_path):
+    segment_id_list = []
+    segment_name_list = []
+    segment_description_list = []
+    segment_status_list = []
+    segment_lifetime_list = []
+    data_source_id_list = []
+    data_source_name_list = []
+    uniques_1_day_list = []
+    uniques_7_day_list = []
+    uniques_14_day_list = []
+    uniques_30_day_list = []
+    uniques_60_day_list = []
+    # uniques_90_day_list = []
+
+    access_token, data_source_dict = get_data_source_name_dict()
+
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+
+    given_data_source_name_list = read_df["Data Source Name"]
+    
+    for given_data_source_name in given_data_source_name_list:
+        given_data_source_id = data_source_dict[given_data_source_name.lower()]
+        access_token, trait_json = get_trait_uniques(access_token, given_data_source_id)
+
+        for trait in trait_json:
+            dataSourceId = trait["dataSourceId"]
+
+            sid = trait["sid"]
+            name = trait["name"]
+            description = trait["description"]
+            status = None
+            if "status" in trait:
+                status = trait["status"]
+            
+            ttl = None
+            if 'ttl' in trait:
+                ttl = trait['ttl']
+
+            uniques_1_day = trait["uniques1Day"]
+            uniques_7_day = trait["uniques7Day"]
+            uniques_14_day = trait["uniques14Day"]
+            uniques_30_day = trait["uniques30Day"]
+            uniques_60_day = trait["uniques60Day"]
+            # uniques_90_day = trait["uniques90Day"]
+
+            segment_id_list.append(sid)
+            segment_name_list.append(name)
+            segment_description_list.append(description)
+            segment_status_list.append(status)
+            segment_lifetime_list.append(ttl)
+            data_source_id_list.append(dataSourceId)
+            data_source_name_list.append(given_data_source_name)
+            uniques_1_day_list.append(uniques_1_day)
+            uniques_7_day_list.append(uniques_7_day)
+            uniques_14_day_list.append(uniques_14_day)
+            uniques_30_day_list.append(uniques_30_day)
+            uniques_60_day_list.append(uniques_60_day)
+            # uniques_90_day_list.append(uniques_90_day)
+
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
+
+    write_df = pd.DataFrame({
+        "Segment ID":segment_id_list,
+        "Segment Name":segment_name_list,
+        "Segment Description":segment_description_list,
+        "Status": segment_status_list,
+        "Segment Lifetime":segment_lifetime_list,
+        "Data Source ID": data_source_id_list,
+        "Data Source Name":data_source_name_list,
+        "Uniques 1 Day":uniques_1_day_list,
+        "Uniques 7 Day":uniques_7_day_list,
+        "Uniques 14 Day":uniques_14_day_list,
+        "Uniques 30 Day":uniques_30_day_list,
+        "Uniques 60 Day":uniques_60_day_list
+        # "Uniques 90 Day":uniques_90_day_list
+    })
+    return write_excel.write_and_email(write_df, file_name + "_output_get_uniques", SHEET_NAME)

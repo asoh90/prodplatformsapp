@@ -31,8 +31,11 @@ platform_functions = {
                                         "Delete Segment":["Delete Segments"]
                                     }
                                  },
-                        "Adobe AAM":{"level":1,
-                                    "functions":["Add Segments", "Edit Segments", "Query All Segments", "Query Subscriber Contacts"]
+                        "Adobe AAM":{"level":2,
+                                    "functions":{
+                                        "Segment":["Add Segments", "Edit Segments", "Query All Segments"],
+                                        "Others":["Get Data Source Uniques", "Query Subscriber Contacts"]
+                                        }
                                     },
                         "Adobe AdCloud":{"level":1,
                                     "functions":["Add Custom Segments", "Edit Custom Segments"]
