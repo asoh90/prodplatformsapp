@@ -1417,7 +1417,7 @@ def get_segment_loads_report(start_date, end_date):
     request_json = {
                         "report":{
                                     "report_type":"segment_load",
-                                    "columns":["segment_id","segment_name","month","total_loads","monthly_uniques","avg_daily_uniques"],
+                                    "columns":["segment_id","segment_name","month","monthly_uniques"],
                                     "groups":["segment_id","month"],
                                     "orders":["month"],
                                     "format":"excel",
@@ -1533,9 +1533,7 @@ def get_report(start_date, end_date, report_type, row_counter, segment_dict):
         segment_id_list = []
         segment_name_list = []
         month_list = []
-        total_loads_list = []
         monthly_uniques_list = []
-        avg_daily_uniques_list = []
 
         # report is returned in string
         for report_line in report_data:
@@ -1549,17 +1547,13 @@ def get_report(start_date, end_date, report_type, row_counter, segment_dict):
                 segment_id_list.append(report_line_data[0])
                 segment_name_list.append(report_line_data[1])
                 month_list.append(report_line_data[2])
-                total_loads_list.append(report_line_data[3])
-                monthly_uniques_list.append(report_line_data[4])
-                avg_daily_uniques_list.append(report_line_data[5])
+                monthly_uniques_list.append(report_line_data[3])
 
         write_df = pd.DataFrame({
             "segment_id":segment_id_list,
             "segment_name":segment_name_list,
             "month":month_list,
-            "total_loads":total_loads_list,
-            "monthly_uniques":monthly_uniques_list,
-            "avg_daily_uniques":avg_daily_uniques_list
+            "monthly_uniques":monthly_uniques_list
         })
 
         return write_excel.write_without_return(write_df, "AppNexus_segment_loads_report_" + str(start_date)[:10] + "_to_" + str(end_date)[:10])
