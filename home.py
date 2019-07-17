@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from flask import Flask, render_template, url_for, flash, redirect, request, send_file, session, after_this_request
 from flask_oauth import OAuth
 from forms import SelectPlatformForm, SelectFunctionForm
@@ -218,4 +220,4 @@ if __name__ == "__main__":
     port = 5000
     url = SITE_URL
     threading.Timer(1.25, lambda: webbrowser.open(url)).start()
-    app.run(threaded=True)
+    app.run(threaded=True, host='0.0.0.0')
