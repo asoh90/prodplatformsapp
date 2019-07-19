@@ -111,7 +111,7 @@ def read_all_to_add_segments(file_path):
             else:
                 write_remarks_list.append(add_segment_json)
         except:
-            write_remarks_list.append("CPM is not decimal or Lifetime is not integer")
+            write_remarks_list.append("account_token is incorrect (shouldn't be only numbers), CPM is not decimal or Lifetime is not integer")
 
         row_counter += 1
 
