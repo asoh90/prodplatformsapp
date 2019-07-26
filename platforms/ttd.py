@@ -111,35 +111,38 @@ def get_query_all(auth_code):
 def append_rates_to_push(brand, provider_element_id, partner_id, price, price_type, rates_to_push_list):
     output_raw_data = None
     
-    if brand.lower() == "bombora":
-        brand = BOMBORA_BRAND_ID
-    elif brand.lower() == "eyeota":
-        brand = EYEOTA_BRAND_ID
-    else:
-        return rates_to_push_list,{"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
+    try:
+        if brand.lower() == "bombora":
+            brand = BOMBORA_BRAND_ID
+        elif brand.lower() == "eyeota":
+            brand = EYEOTA_BRAND_ID
+        else:
+            return rates_to_push_list,{"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
 
-    if price_type.lower() == "cpm":
-        rates_to_push_list.append({
-                                "ProviderElementID":str(provider_element_id),
-                                "BrandID":brand,
-                                "RateLevel": "Partner",
-                                "PartnerID":str(partner_id), # This is the seat ID
-                                "RateType":"CPM",
-                                "CPMRate": {
-                                    "Amount":float(price),
-                                    "CurrencyCode":"USD"
-                                }
-                            })
-    else:
-        rates_to_push_list.append({
-                                "ProviderElementID":str(provider_element_id),
-                                "BrandID":brand,
-                                "RateLevel": "Partner",
-                                "PartnerID":str(partner_id), # This is the seat ID
-                                "RateType":"PercentOfMediaCost",
-                                "PercentOfMediaCostRate": float(price)
-                            })
-    return rates_to_push_list,"OK"
+        if price_type.lower() == "cpm":
+            rates_to_push_list.append({
+                                    "ProviderElementID":str(provider_element_id),
+                                    "BrandID":brand,
+                                    "RateLevel": "Partner",
+                                    "PartnerID":str(partner_id), # This is the seat ID
+                                    "RateType":"CPM",
+                                    "CPMRate": {
+                                        "Amount":float(price),
+                                        "CurrencyCode":"USD"
+                                    }
+                                })
+        else:
+            rates_to_push_list.append({
+                                    "ProviderElementID":str(provider_element_id),
+                                    "BrandID":brand,
+                                    "RateLevel": "Partner",
+                                    "PartnerID":str(partner_id), # This is the seat ID
+                                    "RateType":"PercentOfMediaCost",
+                                    "PercentOfMediaCostRate": float(price)
+                                })
+        return rates_to_push_list,"OK"
+    except:
+        return rates_to_push_list,{"api_error": "Brand cannot be changed to lowercase."}
 
 def retrieve_batch_id_status(auth_code, batch_id):
     output_raw_data = requests.get(URL_DATARATE_BATCH + "/" + batch_id,
