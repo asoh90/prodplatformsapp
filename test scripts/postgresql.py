@@ -1,5 +1,14 @@
 # /usr/local/Cellar/postgresql/11.1
 
+# Steps to create DB
+psql postgres
+CREATE ROLE eyeota WITH LOGIN PASSWORD '3y3otaSG!!';
+ALTER ROLE eyeota CREATEDB;
+\q
+psql postgres -U eyeota
+CREATE DATABASE eyeota;
+\connect eyeota
+
 # username = eyeota
 # password = 3y3otaSG!!
 # database = eyeota
@@ -15,3 +24,5 @@ CREATE TABLE s3_file_match(
     created_on TIMESTAMP NOT NULL,
     created_by VARCHAR(100) NOT NULL
 );
+
+select * from s3_file_match;
