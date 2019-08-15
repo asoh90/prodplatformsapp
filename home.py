@@ -16,6 +16,7 @@ import json
 import threadpool
 import logging
 from logging.handlers import RotatingFileHandler
+from functools import wraps
 
 # Site
 SITE_URL = "127.0.0.1:5000"
@@ -50,33 +51,39 @@ google = oauth.remote_app('google',
                           consumer_key=GOOGLE_CLIENT_ID,
                           consumer_secret=GOOGLE_CLIENT_SECRET)
 
+def authenticate(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        # access_token = session.get('access_token')
+        # # print("ACCESS TOKEN: {}".format(access_token))
+        # if access_token is None:
+        #     return redirect(url_for('login'))
+        # access_token = access_token[0]
+        
+        # headers = {'Authorization': 'OAuth '+ access_token}
+        # req = Request('https://www.googleapis.com/oauth2/v1/userinfo',
+        #               None, headers)
+        # try:
+        #     res = urlopen(req)
+        # except URLError as e:
+        #     if e.code == 401:
+        #         # Unauthorized - bad token
+        #         session.pop('access_token', None)
+        #         return redirect(url_for('login'))
+
+        # login_response = res.read().decode('utf-8')
+        # login_dict = json.loads(login_response)
+        # session["email"] = login_dict["email"]
+        check_output = check_login()
+        if not check_output is None:
+            return check_output
+        else:
+            return f(*args, **kwargs)
+    return wrap
+
 @app.route('/')
 def index():
-    # access_token = session.get('access_token')
-    # # print("ACCESS TOKEN: {}".format(access_token))
-    # if access_token is None:
-    #     return redirect(url_for('login'))
-    # access_token = access_token[0]
-    
-    # headers = {'Authorization': 'OAuth '+ access_token}
-    # req = Request('https://www.googleapis.com/oauth2/v1/userinfo',
-    #               None, headers)
-    # try:
-    #     res = urlopen(req)
-    # except URLError as e:
-    #     if e.code == 401:
-    #         # Unauthorized - bad token
-    #         session.pop('access_token', None)
-    #         return redirect(url_for('login'))
-
-    # login_response = res.read().decode('utf-8')
-    # login_dict = json.loads(login_response)
-    # session["email"] = login_dict["email"]
-    check_output = check_login()
-    if check_output == None:
-        return redirect(url_for('home'))
-    else:
-        return check_output
+    return redirect(url_for('home'))
 
 def check_login():
     access_token = session.get('access_token')
@@ -118,6 +125,7 @@ def get_access_token():
     return session.get('access_token')
 
 @app.route("/home", methods=['GET','POST'])
+@authenticate
 def home():
     check_output = check_login()
     if check_output == None:
@@ -136,6 +144,7 @@ def home():
 
 # when file gets dropped into the dropzone, or "Query" function is selected, run this
 @app.route("/process", methods=['GET','POST'])
+@authenticate
 def process():
     # get fields
     platform = request.form['platform']
@@ -165,6 +174,7 @@ def process():
     return output["message"]
 
 @app.route("/downloaduploadtemplate", methods=['GET','POST'])
+@authenticate
 def download_upload_template():
     check_output = check_login()
     if check_output == None:
@@ -173,6 +183,7 @@ def download_upload_template():
         return check_output
 
 @app.route("/download_table", methods=['GET'])
+@authenticate
 def download_table():
     check_output = check_login()
     if check_output == None:
@@ -182,6 +193,7 @@ def download_table():
         return check_output
 
 @app.route("/return_output", methods=['GET','POST'])
+@authenticate
 def return_output():
     check_output = check_login()
     if check_output == None:
@@ -193,6 +205,7 @@ def return_output():
         return check_output
 
 @app.route('/download_output/<id>')
+@authenticate
 def download_output(id):
     check_output = check_login()
     if check_output == None:
