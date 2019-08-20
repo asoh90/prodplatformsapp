@@ -39,6 +39,7 @@ app.config["RETURN_FOLDER"] = variables.RETURN_FOLDER
 # RETURN_FOLDER = variables.RETURN_FOLDER
 UPLOAD_FOLDER = variables.UPLOAD_FOLDER
 
+# default is expire in 1 hour: https://stackoverflow.com/questions/13851157/oauth2-and-google-api-access-token-expiration-time
 google = oauth.remote_app('google',
                           base_url='https://www.google.com/accounts/',
                           authorize_url='https://accounts.google.com/o/oauth2/auth',
