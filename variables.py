@@ -22,57 +22,15 @@ thread_pool_dict = {}
 # Logger for console messages
 logger = None
 
-platform_functions = {
-                        "--Select Platform--":[],
-                        "Adform":{"level":2,
-                                    "functions":{
-                                        "Segment":["Add Segments", "Edit Segments", "Query All Segments"],
-                                        "Report":["Audience Report","Data Usage Report"],
-                                        "Delete Segment":["Delete Segments"]
-                                    }
-                                 },
-                        "Adobe AAM":{"level":2,
-                                    "functions":{
-                                        "Segment":["Add Segments", "Edit Segments", "Query All Segments"],
-                                        "Others":["Get Data Source Uniques", "Query Subscriber Contacts"]
-                                        }
-                                    },
-                        "Adobe AdCloud":{"level":1,
-                                    "functions":["Add Custom Segments", "Edit Custom Segments"]
-                                    },
-                        "AppNexus Staging": {"level":2,
-                                    "functions": {
-                                        "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
-                                        "Report":["Data Usage Report", "Segment Loads Report"],
-                                        "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
-                                        }
-                                    },
-                        "AppNexus": {"level":2,
-                                    "functions": {
-                                        "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
-                                        "Report":["Data Usage Report", "Segment Loads Report"],
-                                        "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
-                                        }
-                                    },
-                        "MediaMath": {"level":1,
-                                    "functions":["Refresh Segments","Query All Segments"]
-                                    },
-                        "The Trade Desk": {"level":2,
-                                            "functions":{
-                                                "Custom Segment":["Add Custom Segments","Edit Custom Segments","Query All Segments", "Retrieve Batch Status"],
-                                                "Custom Segment Rates":["Edit Custom Segment Rates", "Retrieve Partner Rates"]
-                                            }
-                                        },
-                        "Yahoo Staging":{"level":1,
-                                    "functions":["Refresh Segments","Query All Segments"]
-                            },
-                        "Yahoo":{"level":1,
-                                    "functions":["Refresh Segments","Query All Segments"]
-                            },
-                        "All Report Platforms":{"level":1,
-                                    "functions":["Data Usage Report","Volumes Report"]
-                        }
-                    }
+dataops_emails = {
+                    "dgoh@eyeota.com":1,
+                    "clim@eyeota.com":2,
+                    "ssatish@eyeota.com":2,
+                    "sychong@eyeota.com":2,
+                    "asoh@eyeota.com":1,
+                    "eso@eyeota.com":2,
+                    "mor@eyeota.com":2
+                }
 
 def read_credentials(input):
     input_list = input.split("||")
@@ -91,3 +49,97 @@ def read_credentials(input):
             login_credentials[platform] = {key:value}
 
     # print(login_credentials)
+
+def get_platform_functions(email):
+    platform_functions = None
+    global dataops_emails
+
+    if email in dataops_emails:
+        platform_functions = {
+                                "--Select Platform--":[],
+                                "Adform":{"level":2,
+                                            "functions":{
+                                                "Segment":["Add Segments", "Edit Segments", "Query All Segments"],
+                                                "Report":["Audience Report","Data Usage Report"],
+                                                "Delete Segment":["Delete Segments"]
+                                            }
+                                        },
+                                "Adobe AAM":{"level":2,
+                                            "functions":{
+                                                "Segment":["Add Segments", "Edit Segments", "Query All Segments"],
+                                                "Others":["Get Data Source Uniques", "Query Subscriber Contacts"]
+                                                }
+                                            },
+                                "Adobe AdCloud":{"level":1,
+                                            "functions":["Add Custom Segments", "Edit Custom Segments"]
+                                            },
+                                "AppNexus Staging": {"level":2,
+                                            "functions": {
+                                                "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
+                                                "Report":["Data Usage Report", "Segment Loads Report"],
+                                                "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
+                                                }
+                                            },
+                                "AppNexus": {"level":2,
+                                            "functions": {
+                                                "Segment":["Add Segments","Edit Segments","Query All Segments","Retrieve Segments"],
+                                                "Report":["Data Usage Report", "Segment Loads Report"],
+                                                "Troubleshoot":["Add Existing Segments to Specific Buyer Member","Add Segment Billings","Retrieve Buyer Member Segments"]
+                                                }
+                                            },
+                                "MediaMath": {"level":1,
+                                            "functions":["Refresh Segments","Query All Segments"]
+                                            },
+                                "The Trade Desk": {"level":2,
+                                                    "functions":{
+                                                        "Custom Segment":["Add Custom Segments","Edit Custom Segments","Query All Segments", "Retrieve Batch Status"],
+                                                        "Custom Segment Rates":["Edit Custom Segment Rates", "Retrieve Partner Rates"]
+                                                    }
+                                                },
+                                "Yahoo Staging":{"level":1,
+                                            "functions":["Refresh Segments","Query All Segments"]
+                                    },
+                                "Yahoo":{"level":1,
+                                            "functions":["Refresh Segments","Query All Segments"]
+                                    },
+                                "All Report Platforms":{"level":1,
+                                            "functions":["Data Usage Report","Volumes Report"]
+                                }
+                            }
+    else:
+        platform_functions = {
+                                "--Select Platform--":[],
+                                "Adform":{"level":2,
+                                            "functions":{
+                                                "Segment":["Query All Segments"],
+                                                "Report":["Audience Report","Data Usage Report"],
+                                            }
+                                        },
+                                "Adobe AAM":{"level":2,
+                                            "functions":{
+                                                "Segment":["Query All Segments"],
+                                                "Others":["Get Data Source Uniques", "Query Subscriber Contacts"]
+                                                }
+                                            },
+                                "AppNexus": {"level":2,
+                                            "functions": {
+                                                "Segment":["Query All Segments"],
+                                                "Report":["Data Usage Report", "Segment Loads Report"],
+                                                }
+                                            },
+                                "MediaMath": {"level":1,
+                                            "functions":["Query All Segments"]
+                                            },
+                                "The Trade Desk": {"level":2,
+                                                    "functions":{
+                                                        "Custom Segment":["Query All Segments"],
+                                                    }
+                                                },
+                                "Yahoo":{"level":1,
+                                            "functions":["Query All Segments"]
+                                    },
+                                "All Report Platforms":{"level":1,
+                                            "functions":["Data Usage Report","Volumes Report"]
+                                }
+                            }
+    return platform_functions

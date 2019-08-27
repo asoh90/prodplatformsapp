@@ -27,8 +27,6 @@ GOOGLE_CLIENT_SECRET = 'ceM7QWDLzwA-7xJ0qalIPweP'
 REDIRECT_URI = "/oauth2callback"
 DEBUG = True
 
-platform_functions = variables.platform_functions
-
 app = Flask(__name__)
 # app.debug = DEBUG
 oauth = OAuth()
@@ -139,6 +137,7 @@ def home():
         form = SelectPlatformForm()
         # if form.validate_on_submit():
         #     return redirect(url_for("function", platform=form.platform.data))
+        platform_functions = variables.get_platform_functions(session["email"])
         return render_template('home.html', form=form, platform_functions=platform_functions)
     else:
         return check_output
