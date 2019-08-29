@@ -13,6 +13,7 @@ import sys
 from urllib.request import Request, urlopen, URLError
 import write_excel
 import json
+import requests
 import threadpool
 import logging
 from logging.handlers import RotatingFileHandler
@@ -43,7 +44,9 @@ google = oauth.remote_app('google',
                           authorize_url='https://accounts.google.com/o/oauth2/auth',
                           request_token_url=None,
                           request_token_params={'scope': 'https://www.googleapis.com/auth/userinfo.email',
-                                                'response_type': 'code'},
+                                                'response_type': 'code',
+                                                'prompt':'consent',  # this field allows refresh_token to be generated every time
+                                                'access_type':'offline'},
                           access_token_url='https://accounts.google.com/o/oauth2/token',
                           access_token_method='POST',
                           access_token_params={'grant_type': 'authorization_code'},
@@ -112,10 +115,32 @@ def login():
     callback=url_for('authorized', _external=True)
     return google.authorize(callback=callback)
 
+# get access token with refresh_token
+def refresh(refresh_token):
+    params = {
+                'grant_type':'refresh_token',
+                'client_id':GOOGLE_CLIENT_ID,
+                'client_secret':GOOGLE_CLIENT_SECRET,
+                'refresh_token':refresh_token
+            }
+    
+    authorization_url = 'https://www.googleapis.com/oauth2/v4/token'
+
+    refresh_request = requests.post(authorization_url, data=params)
+
+    if refresh_request.ok:
+        access_token = refresh_request.json()['access_token']
+        print("refresh access_token: {}".format(access_token))
+        return access_token
+    else:
+        return None
+
 @app.route(REDIRECT_URI)
 @google.authorized_handler
 def authorized(resp):
-    access_token = resp['access_token']
+    print("authorized: {}".format(resp))
+    refresh_token = resp['refresh_token']
+    access_token = refresh(refresh_token)
     session['access_token'] = access_token, ''
     return redirect(url_for('index'))
 
