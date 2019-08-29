@@ -130,7 +130,7 @@ def refresh(refresh_token):
 
     if refresh_request.ok:
         access_token = refresh_request.json()['access_token']
-        print("refresh access_token: {}".format(access_token))
+        # print("refresh access_token: {}".format(access_token))
         return access_token
     else:
         return None
@@ -138,7 +138,7 @@ def refresh(refresh_token):
 @app.route(REDIRECT_URI)
 @google.authorized_handler
 def authorized(resp):
-    print("authorized: {}".format(resp))
+    # print("authorized: {}".format(resp))
     refresh_token = resp['refresh_token']
     access_token = refresh(refresh_token)
     session['access_token'] = access_token, ''
