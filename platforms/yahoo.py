@@ -198,6 +198,7 @@ def format_segment_json(segment_dict):
                 segment_description = segment_dict[segment_name]["description"]
             except:
                 return None, {"message":"ERROR: Please sort Yahoo Taxonomy by Segment Name!"}
+            new_dict["description"] = segment_description
             new_dict["gdpr_mode"] = GDPR_MODE
             new_dict["type"] = "SEGMENT"
             new_dict["targetable"] = True
