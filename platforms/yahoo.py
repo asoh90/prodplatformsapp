@@ -114,6 +114,8 @@ def get_query_all():
     write_id = []
     write_private_client_id = []
 
+    query_response = None
+
     try:
         oauth = authenticate()
         if (oauth == None):
@@ -148,8 +150,11 @@ def get_query_all():
 
         return write_excel.write(write_df, "DONOTUPLOAD_Yahoo_" + "Query", SHEET_NAME)
     except:
-        return {"message":"ERROR: " + query_response["message"]}
-
+        if not query_response is None:
+            return {"message":"ERROR: " + query_response["message"]}
+        else:
+            return {"message":"ERROR: Unknown error running function for Yahoo"}
+            
 def split_segments_to_add(segment_dict, segment_name_list, segment_id, segment_description, private_client_id):
     current_segment_name = segment_name_list[0]
     segment_name_list = segment_name_list[1:]
