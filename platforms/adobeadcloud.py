@@ -97,7 +97,7 @@ def read_all_to_add_segments(file_path):
                                         "segment_name": segment_name,
                                         "segment_description": segment_description,
                                         "partner_segment_id": str(segment_id),
-                                        "billing_through_tubemogul":"F",
+                                        "billing_through_tubemogul":"T",
                                         "cpm": cpm,
                                         "retention_window_in_days": lifetime
                                     }
@@ -183,7 +183,7 @@ def read_all_to_edit_segments(file_path):
                                         "segment_name": segment_name,
                                         "segment_description": segment_description,
                                         "partner_segment_id": str(segment_id),
-                                        "billing_through_tubemogul":"F",
+                                        "billing_through_tubemogul":"T",
                                         "cpm": cpm,
                                         "retention_window_in_days": lifetime,
                                         "status": status
