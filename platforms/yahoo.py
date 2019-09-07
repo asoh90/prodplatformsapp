@@ -198,12 +198,7 @@ def format_segment_json(segment_dict):
         if "id" in segment_dict[segment_name]:
             new_dict["name"] = segment_name
             new_dict["id"] = segment_dict[segment_name]["id"]
-            segment_description = None
-            try:
-                segment_description = segment_dict[segment_name]["description"]
-            except:
-                return None, {"message":"ERROR: Please sort Yahoo Taxonomy by Segment Name!"}
-            new_dict["description"] = segment_description
+            new_dict["description"] = segment_dict[segment_name]["description"]
             new_dict["gdpr_mode"] = GDPR_MODE
             new_dict["type"] = "SEGMENT"
             new_dict["targetable"] = True
@@ -255,10 +250,12 @@ def read_file_to_add_segments(file_path):
 
         segment_dict = split_segments_to_add(segment_dict, segment_name_split, segment_id, segment_description, private_client_id)
     
-    data, error = format_segment_json(segment_dict)
-    if not error is None:
-        return error
-    # print(data)
+    data = None
+    try:
+        data = format_segment_json(segment_dict)
+    except:
+        variables.logger.warning("{} Please sort Yahoo taxonomy by Segment Name in desc order before uploading".format(datetime.datetime.now().isoformat()))
+        return {"message": "ERROR: Please sort Yahoo taxonomy by Segment Name in desc order before uploading"}
 
     with open (METADATA_FILE, 'w') as fp:
         json.dump(METADATA, fp)
