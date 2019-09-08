@@ -312,8 +312,11 @@ def delete_segment(access_token, segment_id):
     if delete_segment_request.status_code == 204:
         return "OK"
     else:
-        delete_segment_json = delete_segment_request.json()
-        return delete_segment_json["message"]
+        try:
+            delete_segment_json = delete_segment_request.json()
+            return delete_segment_json["message"]
+        except:
+            return "Error {}".format(delete_segment_request.status_code)
 
 def edit_segment(access_token, segment_id, data_provider_id, region, category_id, ref_id, fee, ttl, name, status):
     edit_segment_request = requests.put(SEGMENTS_URL + "/" + str(segment_id),
