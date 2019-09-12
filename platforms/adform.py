@@ -205,11 +205,18 @@ def get_all_segments():
                 segment_clicks = segment_usageStatistics["clicks"]
                 segment_impressions = segment_usageStatistics["impressions"]
 
-            category_parentId = categories_dict[segment_categoryId]["parentId"]
-            category_name = categories_dict[segment_categoryId]["name"]
-            category_full_name = get_full_category_name(category_parentId, category_name, categories_dict)
+            category_parentId = None
+            category_name = None
+            category_full_name = None
+            segment_fullname = None
+            try:
+                category_parentId = categories_dict[segment_categoryId]["parentId"]
+                category_name = categories_dict[segment_categoryId]["name"]
+                category_full_name = get_full_category_name(category_parentId, category_name, categories_dict)
 
-            segment_full_name = category_full_name + " - " + segment_name
+                segment_full_name = category_full_name + " - " + segment_name
+            except:
+                pass
 
             segment_id_list.append(segment_id)
             segment_dataProviderName_list.append(data_provider_name)
@@ -661,7 +668,7 @@ def read_file_to_edit_segments(file_path):
                         if temp_parent_category_id == None:
                             segment_id_list.append(None)
                             write_category_result_list.append("Error creating category: {}".format(category_part_name))
-                            write_add_segment_result_list.append(None)
+                            write_edit_segment_result_list.append(None)
                             category_success = False
                         # category creation success
                         else:
