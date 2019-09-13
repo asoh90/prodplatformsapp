@@ -42,6 +42,7 @@ def callAPI(function, file_path):
         return {"message":"ERROR: Incorrect login credentials! Please download 'asoh-flask-deploy.sh' file from <a href='https://eyeota.atlassian.net/wiki/pages/viewpageattachments.action?pageId=127336529&metadataLink=true'>Confluence</a> again!>"}
 
     output = "ERROR: option is not available"
+
     if function == "Query All Segments":
         auth_code = authenticate()
         if (auth_code == None):
@@ -53,18 +54,25 @@ def callAPI(function, file_path):
             return query_output
         
         output = processJsonOutput(query_output, "query")
-    elif function == "Edit Custom Segment Rates":
-        output = read_file_to_edit_custom_segment_rates(file_path)
-    elif function == "Retrieve Partner Rates":
-        output = read_file_to_retrieve_partner_rates(file_path)
-    elif function == "Retrieve Batch Status":
-        output = read_file_to_retrieve_batch_id_status(file_path)
     else:
-        if function == "Add Custom Segments":
-            function = 'Add'
-        elif function == "Edit Custom Segments":
-            function = 'Edit'
-        output = read_file_to_add_or_edit_custom_segments(file_path, function)
+        # Check if SHEET_NAME exists in uploaded file
+        try:
+            read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+        except:
+            return{'message':"ERROR: Unable to find sheet name: {}".format(SHEET_NAME)}
+
+        elif function == "Edit Custom Segment Rates":
+            output = read_file_to_edit_custom_segment_rates(file_path)
+        elif function == "Retrieve Partner Rates":
+            output = read_file_to_retrieve_partner_rates(file_path)
+        elif function == "Retrieve Batch Status":
+            output = read_file_to_retrieve_batch_id_status(file_path)
+        else:
+            if function == "Add Custom Segments":
+                function = 'Add'
+            elif function == "Edit Custom Segments":
+                function = 'Edit'
+            output = read_file_to_add_or_edit_custom_segments(file_path, function)
 
     return output
 

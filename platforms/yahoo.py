@@ -54,6 +54,12 @@ def callAPI(platform, function, file_path):
 
     output = "ERROR: option is not available"
     if (function == "Refresh Segments"):
+        # Check if SHEET_NAME exists in uploaded file
+        try:
+            read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+        except:
+            return{'message':"ERROR: Unable to find sheet name: {}".format(SHEET_NAME)}
+            
         output = read_file_to_add_segments(file_path)
     elif (function == "Query All Segments"):
         output = get_query_all()

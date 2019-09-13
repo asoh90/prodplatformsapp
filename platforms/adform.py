@@ -38,20 +38,27 @@ def callAPI(function, file_path):
     start_time = time.time()
     output = {"message":"ERROR: option is not available"}
 
-    if function == "Add Segments":
-        output = read_file_to_add_segments(file_path)
-    elif function == "Edit Segments":
-        output = read_file_to_edit_segments(file_path)
-    elif function == "Delete Segments":
-        output = read_file_to_delete_segments(file_path)
-    elif function == "Query All Segments":
+    if function == "Query All Segments":
         output = get_all_segments()
-    elif function == "Data Usage Report":
-        file_names = read_file_to_get_report(file_path, SHEET_NAME, "data_usage")
-        output = write_excel.return_report(file_names, SHEET_NAME, file_path)
-    elif function == "Audience Report":
-        file_names = read_file_to_get_report(file_path, SHEET_NAME, "audience")
-        output = write_excel.return_report(file_names, SHEET_NAME, file_path)
+    else:
+        # Check if SHEET_NAME exists in uploaded file
+        try:
+            read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+        except:
+            return{'message':"ERROR: Unable to find sheet name: {}".format(SHEET_NAME)}
+
+        if function == "Add Segments":
+            output = read_file_to_add_segments(file_path)
+        elif function == "Edit Segments":
+            output = read_file_to_edit_segments(file_path)
+        elif function == "Delete Segments":
+            output = read_file_to_delete_segments(file_path)
+        elif function == "Data Usage Report":
+            file_names = read_file_to_get_report(file_path, SHEET_NAME, "data_usage")
+            output = write_excel.return_report(file_names, SHEET_NAME, file_path)
+        elif function == "Audience Report":
+            file_names = read_file_to_get_report(file_path, SHEET_NAME, "audience")
+            output = write_excel.return_report(file_names, SHEET_NAME, file_path)
 
     elapsed_time = time.time() - start_time
     elapsed_mins = int(elapsed_time/60)

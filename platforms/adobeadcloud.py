@@ -24,6 +24,12 @@ LIMIT = 50
 PARTNER = "eyeota"
 
 def callAPI(function, file_path):
+    # Check if SHEET_NAME exists in uploaded file
+    try:
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    except:
+        return{'message':"ERROR: Unable to find sheet name: {}".format(SHEET_NAME)}
+
     if function == "Add Custom Segments":
         # output = read_all_to_add_segments(file_path)
         output = read_all_to_add_segments(file_path)
