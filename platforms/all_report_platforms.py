@@ -2,9 +2,15 @@ import write_excel
 import appnexus
 import adform
 
-ALL_REPORT_PLATFORMS_SHEET_NAME = "All Report Platforms"
+SHEET_NAME = "All Report Platforms"
 
 def get_report(function, file_path):
+    # Check if SHEET_NAME exists in uploaded file
+    try:
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    except:
+        return{'message':"ERROR: Unable to find sheet name: {}".format(SHEET_NAME)}
+
     if function == "Data Usage Report":
         return get_platform_reports(file_path, "data_usage")
     elif function == "Volumes Report":
@@ -30,10 +36,10 @@ def get_platform_reports(file_path, report_type):
         appnexus_report_type = "segment_loads"
 
     # Adform get data usage report
-    adform_file_names_output = adform.read_file_to_get_report(file_path, ALL_REPORT_PLATFORMS_SHEET_NAME, adform_report_type)
+    adform_file_names_output = adform.read_file_to_get_report(file_path, SHEET_NAME, adform_report_type)
 
     # AppNexus get data usage report
-    appnexus_file_names_output = appnexus.read_file_to_get_report(file_path, appnexus_report_type, ALL_REPORT_PLATFORMS_SHEET_NAME, appnexus_segment_dict)
+    appnexus_file_names_output = appnexus.read_file_to_get_report(file_path, appnexus_report_type, SHEET_NAME, appnexus_segment_dict)
 
     # if "message" is in the output, it is an error message
     if "message" in adform_file_names_output:
@@ -42,4 +48,4 @@ def get_platform_reports(file_path, report_type):
         return appnexus_file_names_output
     else:
         file_names = adform_file_names_output + appnexus_file_names_output
-        return write_excel.return_report(file_names, ALL_REPORT_PLATFORMS_SHEET_NAME, file_path)
+        return write_excel.return_report(file_names, SHEET_NAME, file_path)

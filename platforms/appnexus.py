@@ -48,6 +48,13 @@ def callAPI(platform, function, file_path):
 
     if function == "Query All Segments":
         output = query_all_segments()
+    elif function == "Segment Loads Report":
+        file_names = read_file_to_get_report(file_path, "segment_loads", SHEET_NAME, None)
+        output = write_excel.return_report(file_names, SHEET_NAME, file_path)
+    elif function == "Data Usage Report":
+        segment_dict = retrieve_all_segments()
+        file_names = read_file_to_get_report(file_path, "data_usage", SHEET_NAME, segment_dict)
+        output = write_excel.return_report(file_names, SHEET_NAME, file_path)
     else:
         # Check if SHEET_NAME exists in uploaded file
         try:
@@ -67,13 +74,7 @@ def callAPI(platform, function, file_path):
             output = read_file_to_add_segment_billings(file_path)
         elif function == "Retrieve Buyer Member Segments":
             output = read_file_to_retrieve_buyer_member_segments(file_path)
-        elif function == "Segment Loads Report":
-            file_names = read_file_to_get_report(file_path, "segment_loads", SHEET_NAME, None)
-            output = write_excel.return_report(file_names, SHEET_NAME, file_path)
-        elif function == "Data Usage Report":
-            segment_dict = retrieve_all_segments()
-            file_names = read_file_to_get_report(file_path, "data_usage", SHEET_NAME, segment_dict)
-            output = write_excel.return_report(file_names, SHEET_NAME, file_path)
+        
     elapsed_time = time.time() - start_time
     elapsed_mins = int(elapsed_time/60)
     elapsed_secs = int(elapsed_time%60)
