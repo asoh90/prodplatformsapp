@@ -325,7 +325,7 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
             segment_full_path = "{} > {}".format(parent_segment_path, segment_name)
             # Adds the current segment to the full path dict
             full_path_dict[segment_id] = segment_full_path
-            print("Segment Full Path: {}".format(segment_full_path))
+            # print("Segment Full Path: {}".format(segment_full_path))
             segment_full_path_list.append(segment_full_path)
         else:
             segment_full_path_list.append("Error!!! Parent Segment ID Not Found!!")
