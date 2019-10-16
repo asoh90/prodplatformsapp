@@ -16,6 +16,7 @@ DATA_FEED_URL = API_URL + "data-feeds/"
 DATA_FEED_PLAN_URL = API_URL + "data-feeds/{}/plans/"
 TRAIT_FOLDER_URL = API_URL + "folders/traits/"
 TRAIT_URL = API_URL + "traits/"
+TRAIT_RULE_URL = API_URL + "traits/{}"
 
 SHEET_NAME = "Adobe AAM"
 AUTHENTICATION_LIMIT_SECS = 3539
@@ -77,6 +78,8 @@ def callAPI(platform, function, file_path):
         output = query_all_segments()
     elif function == "Query Subscriber Contacts":
         output = get_all_subscriber_contacts()
+    elif function == "Get Trait Rule":
+        output = read_all_to_get_trait_rule(file_path)
     else:
         # Check if SHEET_NAME exists in uploaded file
         try:
@@ -1202,3 +1205,70 @@ def read_all_to_get_uniques_report(file_path):
         # "Uniques 90 Day":uniques_90_day_list
     })
     return write_excel.write_and_email(write_df, file_name + "_output_get_uniques", SHEET_NAME)
+
+def read_all_to_get_trait_rule(file_path):
+    write_segment_id_list = []
+    write_segment_name_list = []
+    write_segment_description_list = []
+    write_lifetime_list = []
+    write_data_source_id_list = []
+    write_trait_rule_list = []
+
+    access_token = authenticate()
+
+    read_df = None
+    try:
+        # Skip row 2 ([1]) tha indicates if field is mandatory or not
+        read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
+    except:
+        return {"message":"File Path '{}' is not found".format(file_path)}
+
+    given_segment_id_list = read_df["Segment ID"]
+
+    for given_segment_id in given_segment_id_list:
+        segment_id, segment_name, segment_description, ttl, data_source_id, trait_rule = get_trait_rule(access_token, given_segment_id)
+
+        write_segment_id_list.append(segment_id)
+        write_segment_name_list.append(segment_name)
+        write_segment_description_list.append(segment_description)
+        write_lifetime_list.append(ttl)
+        write_data_source_id_list.append(data_source_id)
+        write_trait_rule_list.append(trait_rule)
+
+    write_df = pd.DataFrame({
+        "Segment ID":write_segment_id_list,
+        "Segment Name":write_segment_name_list,
+        "Segment Description":write_segment_description_list,
+        "Lifetime":write_lifetime_list,
+        "Data Source ID":write_data_source_list,
+        "Trait Rule":write_trait_rule_list
+    })
+
+    return write_excel.write_and_email(write_df, file_name + "_output_get_trait_rule", SHEET_NAME)
+
+def get_trait_rule(access_token, segment_id):
+    if access_token == None:
+        access_token = authenticate()
+    
+    get_trait_rule_request = requests.get(TRAIT_RULE_URL.format(segment_id),
+                                    headers={
+                                        'Content-Type':"application/json",
+                                        'Authorization':"Bearer " + access_token
+                                    }
+                                )
+
+    print("Get Trait Rule URL: {}".format(get_trait_rule_request.url))
+    variables.logger.warning("{} Get Trait Rule URL: {}".format(datetime.datetime.now().isoformat(), get_trait_rule_request.url))
+    get_trait_rule_response = get_trait_rule_request.json()
+
+    if not get_trait_rule_request.status_code == 200:
+        return "Error {}".format(get_trait_rule_request.status_code), None, None, None, None, None
+    
+    sid = get_trait_rule_response["sid"]
+    segment_name = get_trait_rule_response["name"]
+    segment_description = get_trait_rule_response["description"]
+    lifetime = get_trait_rule_response["ttl"]
+    data_source_id = get_trait_rule_response["dataSourceId"]
+    trait_rule = get_trait_rule_response["traitRule"]
+
+    return sid, segment_name, segment_description, ttl, data_source_id, trait_rule

@@ -67,7 +67,7 @@ def get_platform_functions(email):
                                 "Adobe AAM":{"level":2,
                                             "functions":{
                                                 "Segment":["Add Segments", "Edit Segments", "Query All Segments"],
-                                                "Others":["Get Data Source Uniques", "Query Subscriber Contacts"]
+                                                "Others":["Get Data Source Uniques", "Get Trait Rule", "Query Subscriber Contacts"]
                                                 }
                                             },
                                 "Adobe AdCloud":{"level":1,
@@ -118,7 +118,7 @@ def get_platform_functions(email):
                                 "Adobe AAM":{"level":2,
                                             "functions":{
                                                 "Segment":["Query All Segments"],
-                                                "Others":["Get Data Source Uniques", "Query Subscriber Contacts"]
+                                                "Others":["Get Data Source Uniques", "Get Trait Rule", "Query Subscriber Contacts"]
                                                 }
                                             },
                                 "AppNexus": {"level":2,
