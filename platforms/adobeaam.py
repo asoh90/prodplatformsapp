@@ -1240,9 +1240,13 @@ def read_all_to_get_trait_rule(file_path):
         "Segment Name":write_segment_name_list,
         "Segment Description":write_segment_description_list,
         "Lifetime":write_lifetime_list,
-        "Data Source ID":write_data_source_list,
+        "Data Source ID":write_data_source_id_list,
         "Trait Rule":write_trait_rule_list
     })
+
+    os.remove(file_path)
+    file_name_with_extension = file_path.split("/")[-1]
+    file_name = file_name_with_extension.split(".xlsx")[0]
 
     return write_excel.write_and_email(write_df, file_name + "_output_get_trait_rule", SHEET_NAME)
 
@@ -1271,4 +1275,4 @@ def get_trait_rule(access_token, segment_id):
     data_source_id = get_trait_rule_response["dataSourceId"]
     trait_rule = get_trait_rule_response["traitRule"]
 
-    return sid, segment_name, segment_description, ttl, data_source_id, trait_rule
+    return sid, segment_name, segment_description, lifetime, data_source_id, trait_rule
