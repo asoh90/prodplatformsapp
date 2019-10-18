@@ -1266,13 +1266,16 @@ def get_trait_rule(access_token, segment_id):
     get_trait_rule_response = get_trait_rule_request.json()
 
     if not get_trait_rule_request.status_code == 200:
-        return "Error {}".format(get_trait_rule_request.status_code), None, None, None, None, None
+        return "{} Error for segment id: {}".format(get_trait_rule_request.status_code, segment_id), None, None, None, None, None
     
-    sid = get_trait_rule_response["sid"]
-    segment_name = get_trait_rule_response["name"]
-    segment_description = get_trait_rule_response["description"]
-    lifetime = get_trait_rule_response["ttl"]
-    data_source_id = get_trait_rule_response["dataSourceId"]
-    trait_rule = get_trait_rule_response["traitRule"]
+    try:
+        sid = get_trait_rule_response["sid"]
+        segment_name = get_trait_rule_response["name"]
+        segment_description = get_trait_rule_response["description"]
+        lifetime = get_trait_rule_response["ttl"]
+        data_source_id = get_trait_rule_response["dataSourceId"]
+        trait_rule = get_trait_rule_response["traitRule"]
 
-    return sid, segment_name, segment_description, lifetime, data_source_id, trait_rule
+        return sid, segment_name, segment_description, lifetime, data_source_id, trait_rule
+    except:
+        return "Error for segment id: {}".format(segment_id), None, None, None, None, None
