@@ -299,11 +299,13 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
     number_of_segments = len(segment_id_list)
     rates_to_push_list = []
 
-    full_path_dict = {"bumcust":"Bombora > Custom", "eyecustomseg":"Custom Segment"}
-
     auth_code = authenticate()
     if (auth_code == None):
         return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
+
+    segment_json = get_query_all(auth_code)
+    segment_dict = store_segment_in_dict(segment_json)
+    # full_path_dict = {"bumcust":"Bombora > Custom", "eyecustomseg":"Custom Segment", "464":"Branded","eyeotabranded":"Branded > Eyeota"}
 
     row_num = 0
     for segment_id in segment_id_list:
@@ -317,15 +319,19 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
         price = price_list[row_num]
         price_type = price_type_list[row_num]
 
-        full_path_keys = full_path_dict.keys()
+        # full_path_keys = full_path_dict.keys()
+        segment_dict[segment_id] = {"display_name":segment_name,"parent_element_id":parent_segment_id}
+        segment_dict_keys = segment_dict.keys()
         
-        # Gets segment full path
-        if parent_segment_id in full_path_keys:
-            parent_segment_path = full_path_dict[parent_segment_id]
-            segment_full_path = "{} > {}".format(parent_segment_path, segment_name)
-            # Adds the current segment to the full path dict
-            full_path_dict[segment_id] = segment_full_path
+       # Gets segment full path
+        if parent_segment_id in segment_dict_keys:
+            # parent_segment_path = segment_dict[parent_segment_id]
+            # segment_full_path = "{} > {}".format(parent_segment_path, segment_name)
+            # # Adds the current segment to the full path dict
+            # full_path_dict[segment_id] = segment_full_path
             # print("Segment Full Path: {}".format(segment_full_path))
+            segment_full_path = get_full_segment_name(parent_segment_id, segment_name, segment_dict)
+
             segment_full_path_list.append(segment_full_path)
         else:
             segment_full_path_list.append("Error!!! Parent Segment ID Not Found!!")
@@ -343,7 +349,7 @@ def read_file_to_add_or_edit_custom_segments(file_path, function):
         rate_output = None
         if function == "Add":
             # segments right below the root custom segment should add rate
-            if parent_segment_id == "bumcust" or parent_segment_id == "eyecustomseg" or parent_segment_id == "ttdratetest_partnerID_rate":
+            if parent_segment_id == "bumcust" or parent_segment_id == "eyecustomseg" or parent_segment_id == "ttdratetest_partnerID_rate" or parent_segment_id == "464" or parent_segment_id == "eyeotabranded":
                 rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
                 rates_created_list[segment_id] = None
                 if "api_error" in rate_output:
