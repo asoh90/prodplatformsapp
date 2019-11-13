@@ -127,27 +127,28 @@ def append_rates_to_push(brand, provider_element_id, partner_id, price, price_ty
         else:
             return rates_to_push_list,{"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
 
+        temp_rates_to_push = {
+                                "ProviderElementID":str(provider_element_id),
+                                "BrandID":brand,
+                            }
         if price_type.lower() == "cpm":
-            rates_to_push_list.append({
-                                    "ProviderElementID":str(provider_element_id),
-                                    "BrandID":brand,
-                                    "RateLevel": "Partner",
-                                    "PartnerID":str(partner_id), # This is the seat ID
-                                    "RateType":"CPM",
-                                    "CPMRate": {
-                                        "Amount":float(price),
-                                        "CurrencyCode":"USD"
-                                    }
-                                })
+            temp_rates_to_push["RateType"] = "CPM"
+            temp_rates_to_push["CPMRate"] = {
+                                    "Amount":float(price),
+                                    "CurrencyCode":"USD"
+                                }
         else:
-            rates_to_push_list.append({
-                                    "ProviderElementID":str(provider_element_id),
-                                    "BrandID":brand,
-                                    "RateLevel": "Partner",
-                                    "PartnerID":str(partner_id), # This is the seat ID
-                                    "RateType":"PercentOfMediaCost",
-                                    "PercentOfMediaCostRate": float(price)
-                                })
+            temp_rates_to_push["RateType"] = "PercentOfMediaCost"
+            temp_rates_to_push["PercentOfMediaCostRate"] = float(price)
+
+        if not numpy.isnan(partner_id):
+            temp_rates_to_push["PartnerID"] = str(partner_id)
+            temp_rates_to_push["RateLevel"] = "Partner"
+        else:
+            temp_rates_to_push["RateLevel"] = "System"
+
+        rates_to_push_list.append(temp_rates_to_push)
+
         return rates_to_push_list,"OK"
     except:
         return rates_to_push_list,{"api_error": "Brand cannot be changed to lowercase."}
