@@ -126,11 +126,18 @@ def append_rates_to_push(brand, provider_element_id, partner_id, price, price_ty
             brand = EYEOTA_BRAND_ID
         else:
             return rates_to_push_list,{"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
+    except:
+        return rates_to_push_list, {"api_error":"Brand cannot be changed to lowercase"}
 
-        temp_rates_to_push = {
-                                "ProviderElementID":str(provider_element_id),
-                                "BrandID":brand,
-                            }
+    temp_rates_to_push = {
+                            "ProviderElementID":str(provider_element_id),
+                            "BrandID":brand,
+                        }
+    
+    try:
+        numpy.isnan(price_type)
+        return rates_to_push_list, {"api_error":"Invalid Price Type. Only 'CPM' and 'PercentOfMediaCost' allowed"}
+    except:
         if price_type.lower() == "cpm":
             temp_rates_to_push["RateType"] = "CPM"
             temp_rates_to_push["CPMRate"] = {
@@ -141,17 +148,16 @@ def append_rates_to_push(brand, provider_element_id, partner_id, price, price_ty
             temp_rates_to_push["RateType"] = "PercentOfMediaCost"
             temp_rates_to_push["PercentOfMediaCostRate"] = float(price)
 
-        if not numpy.isnan(partner_id):
-            temp_rates_to_push["PartnerID"] = str(partner_id)
-            temp_rates_to_push["RateLevel"] = "Partner"
-        else:
-            temp_rates_to_push["RateLevel"] = "System"
-
-        rates_to_push_list.append(temp_rates_to_push)
-
-        return rates_to_push_list,"OK"
+    try:
+        numpy.isnan(partner_id)
+        temp_rates_to_push["RateLevel"] = "System"
     except:
-        return rates_to_push_list,{"api_error": "Brand cannot be changed to lowercase."}
+        temp_rates_to_push["PartnerID"] = str(partner_id)
+        temp_rates_to_push["RateLevel"] = "Partner"
+
+    rates_to_push_list.append(temp_rates_to_push)
+
+    return rates_to_push_list,"OK"
 
 def retrieve_batch_id_status(auth_code, batch_id):
     output_raw_data = requests.get(URL_DATARATE_BATCH + "/" + batch_id,
@@ -348,19 +354,21 @@ def read_file_to_add_or_edit_segments(file_path, function):
         output_list.append(output)
 
         rate_output = None
-        if function == "Add":
-            # segments right below the root custom segment should add rate
-            if parent_segment_id == "bumcust" or parent_segment_id == "eyecustomseg" or parent_segment_id == "ttdratetest_partnerID_rate" or parent_segment_id == "464" or parent_segment_id == "eyeotabranded":
-                rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
-                rates_created_list[segment_id] = None
-                if "api_error" in rate_output:
-                    rates_output_dict[row_num] = rate_output["api_error"]
-            # if parent segment is not bumcust, eyecustomseg, or ttdratetest_partnerID_rate, add the segment rate
-            elif parent_segment_id not in rates_created_list:
-                rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
-                rates_created_list[segment_id] = None
-                if "api_error" in rate_output:
-                    rates_output_dict[row_num] = rate_output["api_error"]
+        # creating segment without issues (OK), create rates
+        if output == "OK":
+            if function == "Add":
+                # segments right below the root custom segment should add rate
+                if parent_segment_id == "bumcust" or parent_segment_id == "eyecustomseg" or parent_segment_id == "ttdratetest_partnerID_rate" or parent_segment_id == "464" or parent_segment_id == "eyeotabranded":
+                    rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
+                    rates_created_list[segment_id] = None
+                    if "api_error" in rate_output:
+                        rates_output_dict[row_num] = rate_output["api_error"]
+                # if parent segment is not bumcust, eyecustomseg, or ttdratetest_partnerID_rate, add the segment rate
+                elif parent_segment_id not in rates_created_list:
+                    rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
+                    rates_created_list[segment_id] = None
+                    if "api_error" in rate_output:
+                        rates_output_dict[row_num] = rate_output["api_error"]
 
         if rate_output is None:
             rates_output_dict[row_num] = None
