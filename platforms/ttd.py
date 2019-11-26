@@ -696,6 +696,7 @@ def processJsonOutput(json_output, function):
     write_provider_id = []
     write_provider_element_id = []
     write_parent_element_id = []
+    write_segment_name = []
     write_display_name = []
     write_buyable = []
     write_description = []
@@ -714,23 +715,35 @@ def processJsonOutput(json_output, function):
         audience_size = str(row['AudienceSize'])
 
         # loop to get full segment name
-        display_name = get_full_segment_name(parent_element_id, display_name, segment_dictionary)
+        full_display_name = get_full_segment_name(parent_element_id, display_name, segment_dictionary)
+
+        try:
+            provider_element_id = int(provider_element_id)
+        except:
+            pass
+
+        try:
+            parent_element_id = int(parent_element_id)
+        except:
+            pass
 
         write_provider_id.append(provider_id)
         write_provider_element_id.append(provider_element_id)
         write_parent_element_id.append(parent_element_id)
-        write_display_name.append(display_name)
-        write_buyable.append(buyable)
+        write_segment_name.append(display_name)
         write_description.append(description)
+        write_buyable.append(buyable)
+        write_display_name.append(full_display_name)
         write_audience_size.append(audience_size)
 
     write_df = pd.DataFrame({
-                                "Provider ID":write_provider_id,
+                                "Data Provider ID":write_provider_id,
                                 "Segment ID":write_provider_element_id,
                                 "Parent Segment ID":write_parent_element_id,
-                                "Segment Name":write_display_name,
+                                "Segment Name":write_segment_name,
+                                "Segment Description":write_description,
                                 "Buyable":write_buyable,
-                                "Description":write_description,
+                                "Full Segment Name":write_display_name,
                                 "Audience Size":write_audience_size
                             })
     return write_excel.write_and_email(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function, SHEET_NAME)
