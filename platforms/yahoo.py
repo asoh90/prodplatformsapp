@@ -247,6 +247,8 @@ def read_file_to_add_segments(file_path):
         segment_name = segment_name_list[row_num]
         segment_name_split = segment_name.split(" - ")
         segment_description = segment_description_list[row_num]
+        if len(segment_description) > 1024:
+            return {"message": "Error {}".format("Please ensure descriptions are within 1024 characters")}
         private_client_id = private_client_id_list[row_num]
         try:
             private_client_id = str(int(private_client_id))
