@@ -317,6 +317,10 @@ def read_file_to_add_or_edit_segments(file_path, function):
     row_num = 0
     for segment_id in segment_id_list:
         parent_segment_id = parent_segment_id_list[row_num]
+        try:
+            parent_segment_id = str(int(parent_segment_id))
+        except:
+            pass
         segment_name = segment_name_list[row_num]
         segment_description = segment_name_list[row_num]
 
