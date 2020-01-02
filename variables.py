@@ -92,8 +92,8 @@ def get_platform_functions(email):
                                             },
                                 "The Trade Desk": {"level":2,
                                                     "functions":{
-                                                        "Segment":["Add Segments","Edit Segments","Query All Segments", "Retrieve Batch Status"],
-                                                        "Segment Rates":["Edit Segment Rates", "Retrieve Partner Rates"]
+                                                        "Segment":["Add Segments","Edit Segments","Query All Segments", "Retrieve Batch Status", "Retrieve Custom Segments"],
+                                                        "Segment Rates":["Edit Segment Rates"]
                                                     }
                                                 },
                                 "Yahoo Staging":{"level":1,

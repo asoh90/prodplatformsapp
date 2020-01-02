@@ -3,13 +3,14 @@ import write_excel
 import variables
 import pandas as pd
 import datetime
+import time
 
 # API URL
 URL_HOME = "https://api.thetradedesk.com/v3/"
 URL_AUTHENTICATION = URL_HOME + "authentication"
 URL_CREATE_OR_EDIT = URL_HOME + "thirdpartydata"
 URL_QUERY = URL_HOME + "thirdpartydata/query"
-URL_DATARATE = URL_HOME + "/datarate"
+URL_DATARATE = URL_HOME + "datarate"
 URL_DATARATE_BATCH = URL_DATARATE + "/batch"
 URL_DATARATE_QUERY = URL_DATARATE + "/query"
 
@@ -26,6 +27,9 @@ password = None
 PROVIDER_ID = "eyeota"
 BOMBORA_BRAND_ID = "eye87bom"
 EYEOTA_BRAND_ID = "fz867ve"
+RATES_PAGE_SIZE = 100
+PUBLIC_TAXO_RATE_LEVEL = "System"
+CUSTOM_TAXO_RATE_LEVEL = "Partner"
 
 # Parent Provider ID to ignore (i.e. not append to child name)
 TEMP_PROVIDER_ID_TO_IGNORE = ['', '1', 'ROOT', 'None']
@@ -41,8 +45,9 @@ def callAPI(function, file_path):
     except:
         return {"message":"ERROR: Incorrect login credentials! Please download 'asoh-flask-deploy.sh' file from <a href='https://eyeota.atlassian.net/wiki/pages/viewpageattachments.action?pageId=127336529&metadataLink=true'>Confluence</a> again!>"}
 
-    output = "ERROR: option is not available"
+    start_time = time.time()
 
+    output = "ERROR: option is not available"
     if function == "Query All Segments":
         auth_code = authenticate()
         if (auth_code == None):
@@ -53,7 +58,7 @@ def callAPI(function, file_path):
         if "auth_error" in query_output:
             return query_output
         
-        output = processJsonOutput(query_output, "query")
+        output = processJsonOutput(auth_code, query_output, "query")
     else:
         # Check if SHEET_NAME exists in uploaded file
         try:
@@ -63,8 +68,8 @@ def callAPI(function, file_path):
 
         elif function == "Edit Segment Rates":
             output = read_file_to_edit_segment_rates(file_path)
-        elif function == "Retrieve Partner Rates":
-            output = read_file_to_retrieve_partner_rates(file_path)
+        elif function == "Retrieve Custom Segments":
+            output = read_file_to_retrieve_custom_segments(file_path)
         elif function == "Retrieve Batch Status":
             output = read_file_to_retrieve_batch_id_status(file_path)
         else:
@@ -73,6 +78,12 @@ def callAPI(function, file_path):
             elif function == "Edit Segments":
                 function = 'Edit'
             output = read_file_to_add_or_edit_segments(file_path, function)
+
+    elapsed_time = time.time() - start_time
+    elapsed_mins = int(elapsed_time/60)
+    elapsed_secs = int(elapsed_time%60)
+
+    print("Elapsed time: {} mins {} secs".format(elapsed_mins, elapsed_secs))
 
     return output
 
@@ -495,28 +506,29 @@ def retrieve_partner_rates(auth_code, brand, partner_id):
         variables.logger.warning("Unidentified error retrieving partner data rates")
         return {"api_error": "Unidentified error retrieving partner data rates"}
 
-def read_file_to_retrieve_partner_rates(file_path):
+def read_file_to_retrieve_custom_segments(file_path):
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
 
-    brand_seat_id_dict = {}
-
-    brand_list = read_df["Brand"]
+    segment_id_list = read_df["Segment ID"]
     seat_id_list = read_df["Seat ID"]
 
+    write_provider_id_list = []
     write_brand_list = []
-    write_seat_id_list = []
-    write_segment_id_list = []
+    write_parent_id_list = []
     write_segment_name_list = []
     write_segment_description_list = []
     write_buyable_list = []
+    write_segment_full_name_list = []
     write_cpm_list = []
     write_currency_list = []
+    write_percent_of_media_list = []
     write_output_list = []
 
     auth_code = authenticate()
     if (auth_code == None):
         return{'message':"ERROR: getting TTD Auth Code. Please check .sh file if credentials are correct."}
 
+    # get all segment information
     segment_json = get_query_all(auth_code)
     segment_dict = store_segment_in_dict(segment_json)
     segment_formatted_dictionary = {}
@@ -534,61 +546,79 @@ def read_file_to_retrieve_partner_rates(file_path):
         display_name = get_full_segment_name(parent_element_id, display_name, segment_dict)
         
         segment_formatted_dictionary[provider_element_id] = {
-            "name":display_name,
+            "provider_id":provider_id,
+            "parent_id":parent_element_id,
+            "segment_name":display_name,
+            "segment_description":description,
             "buyable":buyable,
-            "description":description
+            "segment_full_name":display_full_name
         }
 
     row_num = 0
-    for brand in brand_list:
+    for segment_id in segment_id_list:
         seat_id = seat_id_list[row_num]
+        str_segment_id = str(segment_id)
 
-        if not brand in brand_seat_id_dict:
-            brand_seat_id_dict[brand] = {}
+        # indicate if there is already an error for output
+        retrieve_output = False
+        rates_dict = get_segments_rates(auth_code, seat_id, segment_id)
 
-        seat_id_dict = brand_seat_id_dict[brand]
+        # check if segment details can be found
+        try:
+            segment_detail = segment_formatted_dictionary[str_segment_id]
+            write_provider_id_list.append(segment_detail["provider_id"])
+            write_parent_id_list.append(segment_detail["parent_id"])
+            write_segment_name_list.append(segment_detail["segment_name"])
+            write_segment_description_list.append(segment_detail["segment_description"])
+            write_buyable_list.append(segment_detail["buyable"])
+            write_segment_full_name_list.append(segment_detail["segment_full_name"])
+        # else if segment detail cannot be found
+        except:
+            write_provider_id_list.append(None)
+            write_parent_id_list.append(None)
+            write_segment_name_list.append(None)
+            write_segment_description_list.append(None)
+            write_buyable_list.append(None)
+            write_segment_full_name_list.append(None)
+            write_output_list.append("Segment cannot be found!")
+            retrieve_output = True
 
-        if not seat_id in seat_id_dict:
-            seat_id_dict[seat_id] = None
+        # check if segment id has rates
+        try:
+            segment_rates = rates_dict[str_segment_id]
+            write_brand_list.append(segment_rates["Brand"])
+            write_cpm_list.append(segment_rates["CPM_Price"])
+            write_currency_list.append(segment_rates["CPM_CurrencyCode"])
+            write_percent_of_media_list.append(segment_rates["PercentOfMediaCost"])
+            # only indicate message if segment can be found (no output message added yet)
+            if not retrieve_output:
+                write_output_list.append(None)
 
-            partner_rates_output = retrieve_partner_rates(auth_code, brand, seat_id)
+        # segment id does not have rates
+        except:
+            write_brand_list.append(None)
+            write_cpm_list.append(None)
+            write_currency_list.append(None)
+            write_percent_of_media_list.append(None)
+            # only indicate message if segment can be found (no output message added yet)
+            if not retrieve_output:
+                write_output_list.append("Segment Rates for Partner '{}' is not found!".format(seat_id))
 
-            if "api_error" in partner_rates_output:
-                write_brand_list.append(brand)
-                write_seat_id_list.append(seat_id)
-                write_segment_id_list.append(None)
-                write_segment_name_list.append(None)
-                write_segment_description_list.append(None)
-                write_segment_buyable_list.append(None)
-                write_cpm_list.append(None)
-                write_currency_list.append(None)
-                write_output_list.append(partner_rates_output["error"])
-            else:
-                for partner_rate in partner_rates_output["Result"]:
-                    write_brand_list.append(brand)
-                    write_seat_id_list.append(seat_id)
-
-                    current_segment_id = partner_rate["ProviderElementId"]
-                    current_segment = segment_formatted_dictionary[current_segment_id]
-                    write_segment_id_list.append(current_segment_id)
-                    write_segment_name_list.append(current_segment["name"])
-                    write_segment_description_list.append(current_segment["description"])
-                    write_buyable_list.append(current_segment["buyable"])
-                    cpm_rate = partner_rate["CPMRate"]
-                    write_cpm_list.append(float(cpm_rate["Amount"]))
-                    write_currency_list.append(cpm_rate["CurrencyCode"])
-                    write_output_list.append(None)
         row_num += 1
 
     write_df = pd.DataFrame({
-                                "Segment ID": write_segment_id_list,
+                                "Data Provider ID": write_provider_id_list,
+                                "Segment ID": segment_id_list,
+                                "Parent Segment ID": write_parent_id_list,
                                 "Segment Name": write_segment_name_list,
                                 "Segment Description": write_segment_description_list,
                                 "Buyable": write_buyable_list,
                                 "Brand":write_brand_list,
-                                "Seat ID": write_seat_id_list,
-                                "Price": write_cpm_list,
-                                "Currency": write_currency_list,
+                                "Segment Full Name": write_segment_full_name_list,
+                                "Seat ID": seat_id_list,
+                                "CPM Price": write_cpm_list,
+                                "CPM Currency Code": write_currency_list,
+                                "Percent Of Media Rate": write_percent_of_media_list,
                                 "Output": write_output_list
                             })
 
@@ -693,9 +723,121 @@ def get_full_segment_name(parent_segment_id, child_segment_name, segment_diction
         child_segment_name = segment_dictionary[parent_segment_id]["display_name"] + " - " + child_segment_name
         parent_segment_id = segment_dictionary[parent_segment_id]["parent_element_id"]
     return child_segment_name
+
+def get_all_rates(auth_code, partner_id):
+    rates_dict = {}
+
+    # get all Eyeota public taxonomy rates
+    result_count = 1
+    page_start_index = 0
+    while result_count > 0:
+        result_count, rates_dict = get_rates(auth_code, EYEOTA_BRAND_ID, page_start_index, partner_id, rates_dict)
+        page_start_index += 1
+
+    # get all Bombora public taxonomy rates
+    result_count = 1
+    page_start_index = 0
+    while result_count > 0:
+        result_count, rates_dict = get_rates(auth_code, BOMBORA_BRAND_ID, page_start_index, partner_id, rates_dict)
+        page_start_index += 1
+
+    return rates_dict
+
+
+def get_rates(auth_code, brand_id, page_start_index, partner_id, rates_dict):
+    # counter to indicate how many results were returned
+    result_count = 0
+
+    json_to_send = {
+                        "ProviderId":PROVIDER_ID,
+                        "BrandId": brand_id,
+                        "RateLevel": PUBLIC_TAXO_RATE_LEVEL,
+                        "PageStartIndex": page_start_index,
+                        "PageSize":RATES_PAGE_SIZE
+                    }
+    if not partner_id is None:
+        json_to_send = {
+                            "ProviderId":PROVIDER_ID,
+                            "BrandId": brand_id,
+                            "RateLevel": CUSTOM_TAXO_RATE_LEVEL,
+                            "PageStartIndex": page_start_index,
+                            "PageSize":RATES_PAGE_SIZE,
+                            "PartnerId":partner_id,
+                            "ProviderElementIds":[segment_id]
+                        }
+
+    output_raw_data = requests.post(URL_DATARATE_QUERY,
+                    headers={
+                        'Content-Type':'application/json',
+                        'TTD-Auth': auth_code
+                    },
+                    json=json_to_send)
+    print("Get Rates URL: {}".format(output_raw_data.url))
+
+    rates_data = output_raw_data.json()
+    rates_result = rates_data["Result"]
+
+    for each_rate_result in rates_result:
+        result_count += 1
+        segment_id = str(each_rate_result["ProviderElementId"])
+
+        # get Brand
+        brand_id = str(each_rate_result["BrandId"])
+        brand = None
+        if brand_id == EYEOTA_BRAND_ID:
+            brand = "eyeota"
+        elif brand_id == BOMBORA_BRAND_ID:
+            brand = "bombora"
+
+        # CPM and Percent of Media have different attribute names
+        # CPM has amount and currency code
+        # Percent of Media only has the rate (in double)
+        cpm_price = None
+        cpm_currency_code = None
+        percent_of_media_cost = None
+
+        try:
+            percent_of_media_cost = float(each_rate_result["PercentOfMediaCostRate"])
+        except:
+            pass
+
+        try:
+            cpm_rate = each_rate_result["CPMRate"]
+            cpm_price = float(cpm_rate["Amount"])
+            cpm_currency_code = cpm_rate["CurrencyCode"]
+        except:
+            pass
+
+        # Check if segment already exists in rates_dict
+        try:
+            segment_rates = rates_dict[segment_id]
+            if not cpm_price is None:
+                segment_rates["CPM_Price"] = cpm_price
+                segment_rates["CPM_CurrencyCode"] = cpm_currency_code
+            if not percent_of_media_cost is None:
+                segment_rates["PercentOfMediaCost"] = percent_of_media_cost
+        except:
+            rates_dict[segment_id] = {
+                "Brand": brand,
+                "CPM_Price": cpm_price,
+                "CPM_CurrencyCode": cpm_currency_code,
+                "PercentOfMediaCost": percent_of_media_cost
+            }
+
+    return result_count, rates_dict
+
+def get_segment_rate(segment_id, rates_dict, segment_dictionary):
+    if segment_id in rates_dict:
+        return rates_dict[segment_id]
+    else:
+        try:
+            parent_segment_id = segment_dictionary[segment_id]["parent_element_id"]
+            return get_segment_rate(parent_segment_id, rates_dict, segment_dictionary)
+        except:
+            return "Segment might be a custom segment which requires Seat ID. Please use 'Retrieve Segment Rates' function for this segment."
         
 # based on the output from TTD API, format them into json format to write to file
-def processJsonOutput(json_output, function):
+def processJsonOutput(auth_code, json_output, function):
     # try:
     write_provider_id = []
     write_provider_element_id = []
@@ -707,6 +849,7 @@ def processJsonOutput(json_output, function):
     write_audience_size = []
 
     segment_dictionary = store_segment_in_dict(json_output)
+    rates_dict = get_all_rates(auth_code, None)
 
     # Print results
     for row in json_output['Result']:
@@ -717,6 +860,21 @@ def processJsonOutput(json_output, function):
         buyable = row['Buyable']
         description = str(row['Description'])
         audience_size = str(row['AudienceSize'])
+
+        cpm_price = None
+        cpm_currency_code = None
+        percent_of_media_rate = None
+        brand = None
+
+        segment_rate = get_segment_rate(provider_element_id, rates_dict, segment_dictionary)
+
+        try:
+            cpm_price = segment_rate["CPM_Price"]
+            cpm_currency_code = segment_rate["CPM_CurrencyCode"]
+            percent_of_media_rate = segment_rate["PercentOfMediaCost"]
+            brand = segment_rate["Brand"]
+        except:
+            cpm_price = "Segment is a custom segment which requires Seat ID. Please use Retrieve Segment Rates function for this segment."
 
         # loop to get full segment name
         full_display_name = get_full_segment_name(parent_element_id, display_name, segment_dictionary)
@@ -737,8 +895,12 @@ def processJsonOutput(json_output, function):
         write_segment_name.append(display_name)
         write_description.append(description)
         write_buyable.append(buyable)
+        write_brand.append(brand)
         write_display_name.append(full_display_name)
         write_audience_size.append(audience_size)
+        write_cpm_price.append(cpm_price)
+        write_cpm_currency_code.append(cpm_currency_code)
+        write_percent_of_media_rate.append(percent_of_media_rate)
 
     write_df = pd.DataFrame({
                                 "Data Provider ID":write_provider_id,
@@ -747,8 +909,11 @@ def processJsonOutput(json_output, function):
                                 "Segment Name":write_segment_name,
                                 "Segment Description":write_description,
                                 "Buyable":write_buyable,
+                                "Brand":write_brand,
                                 "Full Segment Name":write_display_name,
-                                "Audience Size":write_audience_size
+                                "CPM Price":write_cpm_price,
+                                "CPM Currency Code":write_cpm_currency_code,
+                                "Percent of Media Rate":write_percent_of_media_rate
                             })
     return write_excel.write_and_email(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function, SHEET_NAME)
     # return write_excel.write(write_df, "DONOTUPLOAD_The_Trade_Desk_" + function, SHEET_NAME)
