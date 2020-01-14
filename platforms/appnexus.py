@@ -149,9 +149,14 @@ def query_all_segments():
     
     for segment_id in segment_dict:
         segment = segment_dict[segment_id]
+        code = segment["code"]
+        try:
+            code = int(code)
+        except:
+            pass
 
         write_segment_id_list.append(segment_id)
-        write_code_list.append(segment["code"])
+        write_code_list.append(code)
         write_segment_name_list.append(segment["short_name"])
         write_segment_description_list.append(segment["description"])
         write_price_list.append(segment["price"])
