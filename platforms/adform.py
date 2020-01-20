@@ -432,8 +432,8 @@ def read_file_to_add_segments(file_path):
     sleep_counter = 0
     for segment_name in segment_name_list:
         if sleep_counter == 0:
-            print("Sleep 30 seconds to avoid limit")
-            time.sleep(30)
+            print("Sleep 60 seconds to avoid limit")
+            time.sleep(60)
             sleep_counter = 0
 
         region = region_list[row_counter]
