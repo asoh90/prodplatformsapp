@@ -429,7 +429,13 @@ def read_file_to_add_segments(file_path):
     write_add_segment_result_list = []
 
     row_counter = 0
+    sleep_counter = 0
     for segment_name in segment_name_list:
+        if sleep_counter == 0:
+            print("Sleep 30 seconds to avoid limit")
+            time.sleep(30)
+            sleep_counter = 0
+
         region = region_list[row_counter]
         data_provider_id = "67"
         if region.lower() == "apac":
@@ -521,6 +527,7 @@ def read_file_to_add_segments(file_path):
                         segment_id_list.append(None)
                         write_add_segment_result_list.append(output)
 
+        sleep_counter += 1
         row_counter += 1
 
     os.remove(file_path)
