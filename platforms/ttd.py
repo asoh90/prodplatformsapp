@@ -29,7 +29,8 @@ BOMBORA_BRAND_ID = "eye87bom"
 EYEOTA_BRAND_ID = "fz867ve"
 RATES_PAGE_SIZE = 100
 PUBLIC_TAXO_RATE_LEVEL = "System"
-CUSTOM_TAXO_RATE_LEVEL = "Partner"
+PARTNER_TAXO_RATE_LEVEL = "Partner"
+ADVERTISER_TAXO_RATE_LEVEL = "Advertiser"
 
 # Parent Provider ID to ignore (i.e. not append to child name)
 TEMP_PROVIDER_ID_TO_IGNORE = ['', '1', 'ROOT', 'None']
@@ -127,7 +128,7 @@ def get_query_all(auth_code):
     query_data = post_query.json()
     return query_data
 
-def append_rates_to_push(brand, provider_element_id, partner_id, price, price_type, rates_to_push_list):
+def append_rates_to_push(brand, provider_element_id, partner_id, advertiser_id, price, price_type, rates_to_push_list):
     output_raw_data = None
     
     try:
@@ -160,11 +161,17 @@ def append_rates_to_push(brand, provider_element_id, partner_id, price, price_ty
             temp_rates_to_push["PercentOfMediaCostRate"] = float(price)
 
     try:
+        numpy.isnan(advertiser_id)
         numpy.isnan(partner_id)
-        temp_rates_to_push["RateLevel"] = "System"
+        temp_rates_to_push["RateLevel"] = PUBLIC_TAXO_RATE_LEVEL
     except:
-        temp_rates_to_push["PartnerID"] = str(partner_id)
-        temp_rates_to_push["RateLevel"] = "Partner"
+        try:
+            numpy.isnan(advertiser_id)
+            temp_rates_to_push["PartnerID"] = str(partner_id)
+            temp_rates_to_push["RateLevel"] = PARTNER_TAXO_RATE_LEVEL
+        except:
+            temp_rates_to_push["AdvertiserID"] = str(advertiser_id)
+            temp_rates_to_push["RateLevel"] = ADVERTISER_TAXO_RATE_LEVEL
 
     rates_to_push_list.append(temp_rates_to_push)
 
@@ -302,12 +309,12 @@ def read_file_to_add_or_edit_segments(file_path, function):
     segment_description_list = read_df['Segment Description']
     buyable_list = read_df['Buyable']
     brand_list = read_df['Brand']
-    seat_id_list = read_df['Seat ID']
+    partner_id_list = read_df['Partner ID']
+    advertiser_id_list = read_df['Advertiser ID']
     price_list = read_df['Price']
     price_type_list = read_df['Price Type']
     data_provider_list = []
     segment_full_path_list = []
-    partner_name_list = []
     ttd_account_manager_list = []
     date_list = []
     output_list = []
@@ -334,10 +341,10 @@ def read_file_to_add_or_edit_segments(file_path, function):
             pass
         segment_name = segment_name_list[row_num]
         segment_description = segment_name_list[row_num]
-
         buyable = buyable_list[row_num]
         brand = brand_list[row_num]
-        seat_id = seat_id_list[row_num]
+        partner_id = partner_id_list[row_num]
+        advertiser_id = advertiser_id_list[row_num]
         price = price_list[row_num]
         price_type = price_type_list[row_num]
 
@@ -359,7 +366,6 @@ def read_file_to_add_or_edit_segments(file_path, function):
             segment_full_path_list.append("Error!!! Parent Segment ID Not Found!!")
 
         data_provider_list.append("eyeota")
-        partner_name_list.append(None)
         ttd_account_manager_list.append(None)
         date_list.append(None)
 
@@ -374,13 +380,13 @@ def read_file_to_add_or_edit_segments(file_path, function):
             if function == "Add":
                 # segments right below the root custom segment should add rate
                 if parent_segment_id == "bumcust" or parent_segment_id == "eyecustomseg" or parent_segment_id == "ttdratetest_partnerID_rate" or parent_segment_id == "464" or parent_segment_id == "eyeotabranded":
-                    rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
+                    rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, partner_id, advertiser_id, price, price_type, rates_to_push_list)
                     rates_created_list[segment_id] = None
                     if "api_error" in rate_output:
                         rates_output_dict[row_num] = rate_output["api_error"]
                 # if parent segment is not bumcust, eyecustomseg, or ttdratetest_partnerID_rate, add the segment rate
                 elif parent_segment_id not in rates_created_list:
-                    rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
+                    rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, partner_id, advertiser_id, price, price_type, rates_to_push_list)
                     rates_created_list[segment_id] = None
                     if "api_error" in rate_output:
                         rates_output_dict[row_num] = rate_output["api_error"]
@@ -413,8 +419,8 @@ def read_file_to_add_or_edit_segments(file_path, function):
                                 "Buyable": buyable_list,
                                 "Segment Full Path": segment_full_path_list,
                                 "CPM": price_list,
-                                "Partner ID": seat_id_list,
-                                "Partner Name": partner_name_list,
+                                "Partner ID": partner_id_list,
+                                "Advertiser ID": advertiser_id_list,
                                 "TTD Account Manager": ttd_account_manager_list,
                                 "Campaign Live Date": date_list,
                                 "Price Type": price_type_list,
@@ -473,7 +479,7 @@ def add_or_edit(auth_code, provider_element_id, parent_element_id, display_name,
         variables.logger.warning("Unidentified error adding or editing segment for TTD")
         return {"api_error":"Unidentified error adding or editing segment"}
 
-def retrieve_partner_rates(auth_code, brand, partner_id):
+def retrieve_partner_rates(auth_code, brand, partner_id, rate_level):
     output_raw_data = None
     
     if brand.lower() == "bombora":
@@ -486,7 +492,7 @@ def retrieve_partner_rates(auth_code, brand, partner_id):
     json_to_send = {
         "ProviderID":PROVIDER_ID,
         "BrandID":brand,
-        "RateLevel":"Partner",
+        "RateLevel":rate_level,
         "PartnerID":str(partner_id),
         "PageSize":None,
         "PageStartIndex":0
@@ -510,7 +516,8 @@ def read_file_to_retrieve_custom_segments(file_path):
     read_df = pd.read_excel(file_path, sheet_name=SHEET_NAME, skiprows=[1])
 
     segment_id_list = read_df["Segment ID"]
-    seat_id_list = read_df["Seat ID"]
+    partner_id_list = read_df["Partner ID"]
+    advertiser_id_list = read_df["Advertiser ID"]
 
     write_provider_id_list = []
     write_brand_list = []
@@ -556,12 +563,13 @@ def read_file_to_retrieve_custom_segments(file_path):
 
     row_num = 0
     for segment_id in segment_id_list:
-        seat_id = seat_id_list[row_num]
+        partner_id = partner_id_list[row_num]
+        advertiser_id = advertiser_id_list[row_num]
         str_segment_id = str(segment_id)
 
         # indicate if there is already an error for output
         retrieve_output = False
-        rates_dict = get_segments_rates(auth_code, seat_id, segment_id)
+        rates_dict = get_segments_rates(auth_code, partner_id, advertiser_id, segment_id)
 
         # check if segment details can be found
         try:
@@ -615,7 +623,8 @@ def read_file_to_retrieve_custom_segments(file_path):
                                 "Buyable": write_buyable_list,
                                 "Brand":write_brand_list,
                                 "Segment Full Name": write_segment_full_name_list,
-                                "Seat ID": seat_id_list,
+                                "Partner ID": partner_id_list,
+                                "Advertiser ID": advertiser_id_list,
                                 "CPM Price": write_cpm_list,
                                 "CPM Currency Code": write_currency_list,
                                 "Percent Of Media Rate": write_percent_of_media_list,
@@ -724,27 +733,26 @@ def get_full_segment_name(parent_segment_id, child_segment_name, segment_diction
         parent_segment_id = segment_dictionary[parent_segment_id]["parent_element_id"]
     return child_segment_name
 
-def get_all_rates(auth_code, partner_id):
+def get_segments_rates(auth_code, partner_id, advertiser_id, segment_id):
     rates_dict = {}
 
     # get all Eyeota public taxonomy rates
     result_count = 1
     page_start_index = 0
     while result_count > 0:
-        result_count, rates_dict = get_rates(auth_code, EYEOTA_BRAND_ID, page_start_index, partner_id, rates_dict)
+        result_count, rates_dict = get_rates(auth_code, EYEOTA_BRAND_ID, page_start_index, partner_id, advertiser_id, rates_dict, segment_id)
         page_start_index += 1
 
     # get all Bombora public taxonomy rates
     result_count = 1
     page_start_index = 0
     while result_count > 0:
-        result_count, rates_dict = get_rates(auth_code, BOMBORA_BRAND_ID, page_start_index, partner_id, rates_dict)
+        result_count, rates_dict = get_rates(auth_code, BOMBORA_BRAND_ID, page_start_index, partner_id, advertiser_id, rates_dict, segment_id)
         page_start_index += 1
 
     return rates_dict
 
-
-def get_rates(auth_code, brand_id, page_start_index, partner_id, rates_dict):
+def get_rates(auth_code, brand_id, page_start_index, partner_id, advertiser_id, rates_dict):
     # counter to indicate how many results were returned
     result_count = 0
 
@@ -755,14 +763,24 @@ def get_rates(auth_code, brand_id, page_start_index, partner_id, rates_dict):
                         "PageStartIndex": page_start_index,
                         "PageSize":RATES_PAGE_SIZE
                     }
-    if not partner_id is None:
+    if not segment_id is None and not partner_id is None:
         json_to_send = {
                             "ProviderId":PROVIDER_ID,
                             "BrandId": brand_id,
-                            "RateLevel": CUSTOM_TAXO_RATE_LEVEL,
+                            "RateLevel": PARTNER_TAXO_RATE_LEVEL,
                             "PageStartIndex": page_start_index,
                             "PageSize":RATES_PAGE_SIZE,
                             "PartnerId":partner_id,
+                            "ProviderElementIds":[segment_id]
+                        }
+    elif not segment_id is None and not advertiser_id is None:
+        json_to_send = {
+                            "ProviderId":PROVIDER_ID,
+                            "BrandId": brand_id,
+                            "RateLevel": ADVERTISER_TAXO_RATE_LEVEL,
+                            "PageStartIndex": page_start_index,
+                            "PageSize":RATES_PAGE_SIZE,
+                            "PartnerId":advertiser_id,
                             "ProviderElementIds":[segment_id]
                         }
 
@@ -849,7 +867,7 @@ def processJsonOutput(auth_code, json_output, function):
     write_audience_size = []
 
     segment_dictionary = store_segment_in_dict(json_output)
-    rates_dict = get_all_rates(auth_code, None)
+    rates_dict = get_segments_rates(auth_code, None, None, None)
 
     # Print results
     for row in json_output['Result']:
