@@ -136,8 +136,8 @@ def append_rates_to_push(brand, provider_element_id, partner_id, advertiser_id, 
             brand = BOMBORA_BRAND_ID
         elif brand.lower() == "eyeota":
             brand = EYEOTA_BRAND_ID
-        else:
-            return rates_to_push_list,{"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
+        # else:
+        #     return rates_to_push_list,{"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
     except:
         return rates_to_push_list, {"api_error":"Brand cannot be changed to lowercase"}
 
@@ -202,7 +202,8 @@ def read_file_to_retrieve_batch_id_status(file_path):
     write_segment_description_list = []
     batch_id_list = read_df["Batch ID"]
     write_brand_list = []
-    write_seat_id_list = []
+    write_partner_id_list = []
+    write_advertiser_id_list = []
     write_price_list = []
     write_currency_list = []
     write_processing_status_list = []
@@ -245,7 +246,8 @@ def read_file_to_retrieve_batch_id_status(file_path):
                 write_segment_name_list.append(None)
                 write_segment_description_list.append(None)
                 write_brand_list.append(None)
-                write_seat_id_list.append(None)
+                write_partner_id_list.append(None)
+                write_advertiser_id_list.append(None)
                 write_price_list.append(None)
                 write_currency_list.append(None)
                 write_batch_id_list.append(None)
@@ -286,7 +288,8 @@ def read_file_to_retrieve_batch_id_status(file_path):
                                 "Segment Name": write_segment_name_list,
                                 "Segment_Description": write_segment_description_list,
                                 "Brand": write_brand_list,
-                                "Seat ID": write_seat_id_list,
+                                "Partner ID": write_partner_id_list,
+                                "Advertiser ID": write_advertiser_id_list,
                                 "Price": write_price_list,
                                 "Currency": write_currency_list,
                                 "Batch ID": write_batch_id_list,
@@ -486,8 +489,8 @@ def retrieve_partner_rates(auth_code, brand, partner_id, rate_level):
         brand = BOMBORA_BRAND_ID
     elif brand.lower() == "eyeota":
         brand = EYEOTA_BRAND_ID
-    else:
-        return {"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
+    # else:
+    #     return {"api_error": "Invalid value for Brand. Valid values: 'eyeota' or 'bombora'."}
     
     json_to_send = {
         "ProviderID":PROVIDER_ID,
@@ -666,7 +669,8 @@ def read_file_to_edit_segment_rates(file_path):
 
     segment_id_list = read_df["Segment ID"]
     brand_list = read_df["Brand"]
-    seat_id_list = read_df["Seat ID"]
+    partner_id_list = read_df["Partner ID"]
+    advertiser_id_list = read_df["Advertiser ID"]
     price_list = read_df["Price"]
     price_type_list = read_df["Price Type"]
     write_output_list = []
@@ -682,11 +686,12 @@ def read_file_to_edit_segment_rates(file_path):
     row_num = 0
     for segment_id in segment_id_list:
         brand = brand_list[row_num]
-        seat_id = seat_id_list[row_num]
+        partner_id = partner_id_list[row_num]
+        advertiser_id = advertiser_id_list[row_num]
         price = price_list[row_num]
         price_type = price_type_list[row_num]
 
-        rates_to_push_list, append_rate_to_push_output = append_rates_to_push(brand, segment_id, seat_id, price, price_type, rates_to_push_list)
+        rates_to_push_list, append_rate_to_push_output = append_rates_to_push(brand, segment_id, partner_id, advertiser_id, price, price_type, rates_to_push_list)
         
         if "api_error" in append_rate_to_push_output:
             output_dict[row_num] = append_rate_to_push_output["api_error"]
@@ -707,7 +712,8 @@ def read_file_to_edit_segment_rates(file_path):
     write_df = pd.DataFrame({
                                 "Segment ID": segment_id_list,
                                 "Brand":brand_list,
-                                "Seat ID": seat_id_list,
+                                "Partner ID": partner_id_list,
+                                "Advertiser ID": advertiser_id_list,
                                 "Price": price_list,
                                 "Price Type": price_type_list,
                                 "Output": write_output_list
@@ -852,7 +858,7 @@ def get_segment_rate(segment_id, rates_dict, segment_dictionary):
             parent_segment_id = segment_dictionary[segment_id]["parent_element_id"]
             return get_segment_rate(parent_segment_id, rates_dict, segment_dictionary)
         except:
-            return "Segment might be a custom segment which requires Seat ID. Please use 'Retrieve Segment Rates' function for this segment."
+            return "Segment might be a custom segment which requires Partner ID. Please use 'Retrieve Segment Rates' function for this segment."
         
 # based on the output from TTD API, format them into json format to write to file
 def processJsonOutput(auth_code, json_output, function):
@@ -892,7 +898,7 @@ def processJsonOutput(auth_code, json_output, function):
             percent_of_media_rate = segment_rate["PercentOfMediaCost"]
             brand = segment_rate["Brand"]
         except:
-            cpm_price = "Segment is a custom segment which requires Seat ID. Please use Retrieve Segment Rates function for this segment."
+            cpm_price = "Segment is a custom segment which requires Partner ID. Please use Retrieve Segment Rates function for this segment."
 
         # loop to get full segment name
         full_display_name = get_full_segment_name(parent_element_id, display_name, segment_dictionary)
