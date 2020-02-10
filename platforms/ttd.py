@@ -352,7 +352,13 @@ def read_file_to_add_or_edit_segments(file_path, function):
         price_type = price_type_list[row_num]
 
         # full_path_keys = full_path_dict.keys()
-        segment_dict[segment_id] = {"display_name":segment_name,"parent_element_id":parent_segment_id}
+        segment_id_str = str(segment_id)
+        try:
+            segment_id_str = str(int(segment_id))
+        except:
+            pass
+        
+        segment_dict[segment_id_str] = {"display_name":segment_name,"parent_element_id":parent_segment_id}
         segment_dict_keys = segment_dict.keys()
         
        # Gets segment full path
