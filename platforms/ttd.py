@@ -273,7 +273,19 @@ def read_file_to_retrieve_batch_id_status(file_path):
                         brand_id = "eyeota"
 
                     write_brand_list.append(brand_id)
-                    write_seat_id_list.append(data_rate_output["PartnerId"])
+                    return_partner_id = None
+                    try:
+                        return_partner_id = data_rate_output["PartnerId"]
+                    except:
+                        pass
+                    write_partner_id_list.append(return_partner_id)
+                    
+                    return_advertiser_id = None
+                    try:
+                        return_advertiser_id = data_rate_output["AdvertiserId"]
+                    except:
+                        pass
+                    write_advertiser_id_list.append(return_advertiser_id)
                     write_price_list.append(float(data_rate_output["CPMRate"]["Amount"]))
                     write_currency_list.append(data_rate_output["CPMRate"]["CurrencyCode"])
                     write_batch_id_list.append(batch_id)
