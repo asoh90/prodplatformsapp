@@ -402,7 +402,7 @@ def read_file_to_add_or_edit_segments(file_path, function):
                 # segments right below the root custom segment should add rate
                 if parent_segment_id == "bumcust" or parent_segment_id == "eyecustomseg" or parent_segment_id == "ttdratetest_partnerID_rate" or parent_segment_id == "464" or parent_segment_id == "eyeotabranded":
                     rates_to_push_list, rate_output = append_rates_to_push(brand, segment_id, partner_id, advertiser_id, price, price_type, rates_to_push_list)
-                    rates_created_list[segment_id] = None
+                    rates_created_list[segment_id_str] = None
                     if "api_error" in rate_output:
                         rates_output_dict[row_num] = rate_output["api_error"]
                 # if parent segment is not bumcust, eyecustomseg, or ttdratetest_partnerID_rate, add the segment rate
