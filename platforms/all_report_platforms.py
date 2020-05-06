@@ -1,6 +1,7 @@
 import write_excel
 import appnexus
 import adform
+import pandas as pd
 
 SHEET_NAME = "All Report Platforms"
 
