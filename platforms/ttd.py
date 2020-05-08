@@ -631,7 +631,7 @@ def read_file_to_retrieve_custom_segments(file_path):
             write_percent_of_media_list.append(None)
             # only indicate message if segment can be found (no output message added yet)
             if not retrieve_output:
-                write_output_list.append("Segment Rates for Partner '{}' is not found!".format(seat_id))
+                write_output_list.append("Segment Rates for Partner '{}' is not found!".format(partner_id))
 
         row_num += 1
 
