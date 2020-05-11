@@ -583,14 +583,19 @@ def read_file_to_retrieve_custom_segments(file_path):
         }
 
     row_num = 0
+    rates_dict = None
     for segment_id in segment_id_list:
+        try:
+            segment_id = int(segment_id)
+        except:
+            pass
         partner_id = partner_id_list[row_num]
         advertiser_id = advertiser_id_list[row_num]
         str_segment_id = str(segment_id)
 
         # indicate if there is already an error for output
         retrieve_output = False
-        rates_dict = get_segments_rates(auth_code, partner_id, advertiser_id, segment_id)
+        rates_dict = get_segments_rates(auth_code, partner_id, advertiser_id, segment_id, rates_dict)
 
         # check if segment details can be found
         try:
@@ -613,26 +618,37 @@ def read_file_to_retrieve_custom_segments(file_path):
             retrieve_output = True
 
         # check if segment id has rates
-        try:
-            segment_rates = rates_dict[str_segment_id]
-            write_brand_list.append(segment_rates["Brand"])
-            write_cpm_list.append(segment_rates["CPM_Price"])
-            write_currency_list.append(segment_rates["CPM_CurrencyCode"])
-            write_percent_of_media_list.append(segment_rates["PercentOfMediaCost"])
-            # only indicate message if segment can be found (no output message added yet)
-            if not retrieve_output:
-                write_output_list.append(None)
+        # if rate is not found, find its parent segment for rate until the parentmost segment has a rate
+        rate_found = False
+        while not rate_found:
+            try:
+                segment_rates = rates_dict[str_segment_id]
+                write_brand_list.append(segment_rates["Brand"])
+                write_cpm_list.append(segment_rates["CPM_Price"])
+                write_currency_list.append(segment_rates["CPM_CurrencyCode"])
+                write_percent_of_media_list.append(segment_rates["PercentOfMediaCost"])
+                # only indicate message if segment can be found (no output message added yet)
+                if not retrieve_output:
+                    write_output_list.append(None)
+                rate_found = True
 
-        # segment id does not have rates
-        except:
-            write_brand_list.append(None)
-            write_cpm_list.append(None)
-            write_currency_list.append(None)
-            write_percent_of_media_list.append(None)
-            # only indicate message if segment can be found (no output message added yet)
-            if not retrieve_output:
-                write_output_list.append("Segment Rates for Partner '{}' is not found!".format(partner_id))
-
+            # segment id does not have rates
+            except:
+                try:
+                    str_segment_id = segment_dict[str_segment_id]["parent_element_id"]
+                    if not str_segment_id in rates_dict:
+                        rates_dict = get_segments_rates(auth_code, partner_id, advertiser_id, str_segment_id, rates_dict)
+                # no more parent_id
+                except:
+                    write_brand_list.append(None)
+                    write_cpm_list.append(None)
+                    write_currency_list.append(None)
+                    write_percent_of_media_list.append(None)
+                    # only indicate message if segment can be found (no output message added yet)
+                    if not retrieve_output:
+                        write_output_list.append("Segment Rates for Partner '{}' is not found!".format(partner_id))
+                    # given up on finding rate since there isn't any parent id anymore
+                    rate_found = True
         row_num += 1
 
     write_df = pd.DataFrame({
@@ -757,8 +773,9 @@ def get_full_segment_name(parent_segment_id, child_segment_name, segment_diction
         parent_segment_id = segment_dictionary[parent_segment_id]["parent_element_id"]
     return child_segment_name
 
-def get_segments_rates(auth_code, partner_id, advertiser_id, segment_id):
-    rates_dict = {}
+def get_segments_rates(auth_code, partner_id, advertiser_id, segment_id, rates_dict):
+    if rates_dict is None:
+        rates_dict = {}
 
     # get all Eyeota public taxonomy rates
     result_count = 1
@@ -891,7 +908,7 @@ def processJsonOutput(auth_code, json_output, function):
     write_audience_size = []
 
     segment_dictionary = store_segment_in_dict(json_output)
-    rates_dict = get_segments_rates(auth_code, None, None, None)
+    rates_dict = get_segments_rates(auth_code, None, None, None, None)
 
     # Print results
     for row in json_output['Result']:
